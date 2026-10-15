@@ -1,0 +1,9 @@
+node_modules
+dist
+data
+.env
+web/dist
+.astro
+.git
+services
+.screenshots

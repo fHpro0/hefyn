@@ -1,0 +1,63 @@
+# Dev stack with hot reload: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --watch
+# Open http://localhost:4321. Only Astro is published; web (API) and agent stay internal.
+x-dev: &dev
+  build: !override { context: ., dockerfile: Dockerfile.dev }
+  image: hefyn-dev
+  tty: true # Astro detaches into the background without a TTY
+  volumes: !override [dev-data:/data]
+  environment: &devenv
+    HEFYN_SECRET: ${HEFYN_SECRET:-dev-only-secret-do-not-use-in-production}
+    HEFYN_INTERNAL_TOKEN: ${HEFYN_INTERNAL_TOKEN:-dev-only-internal-token}
+    HEFYN_URL: http://localhost:4321
+    HEFYN_AGENT_URL: http://agent:5174
+    HEFYN_REDACT_URL: http://redact:8787
+    HEFYN_DRAIN_TIMEOUT_MS: ${HEFYN_DRAIN_TIMEOUT_MS:-60000}
+    NODE_ENV: development
+services:
+  web:
+    <<: *dev
+    command: ["bun", "run", "dev:web:docker"]
+    ports: !override ["4321:4321"]
+    restart: "no"
+    depends_on: !override [agent]
+    develop:
+      watch:
+        - { action: sync, path: ./src, target: /app/src }
+        - { action: sync, path: ./profiles, target: /app/profiles }
+        - { action: rebuild, path: ./package.json }
+        - { action: rebuild, path: ./bun.lock }
+        - { action: rebuild, path: ./vite.config.ts }
+        - { action: rebuild, path: ./flue.config.ts }
+        - { action: sync, path: ./web/src, target: /app/web/src }
+        - { action: sync, path: ./assets, target: /app/assets }
+        - { action: rebuild, path: ./web/astro.config.mjs }
+  agent:
+    <<: *dev
+    command: ["bun", "run", "dev:agent"]
+    depends_on: !override [redact]
+    develop:
+      watch:
+        - { action: sync, path: ./src, target: /app/src }
+        - { action: sync, path: ./profiles, target: /app/profiles }
+        - { action: rebuild, path: ./package.json }
+        - { action: rebuild, path: ./bun.lock }
+        - { action: rebuild, path: ./vite.config.ts }
+        - { action: rebuild, path: ./flue.config.ts }
+  redact:
+    environment:
+      HEFYN_REDACT_GLINER: ${HEFYN_REDACT_GLINER:-off}
+    develop:
+      watch:
+        - { action: rebuild, path: ./services/redact, ignore: [target/] }
+  runner:
+    volumes: !override [dev-data:/data, /var/run/docker.sock:/var/run/docker.sock] # the dev stack has its own data volume
+    develop:
+      watch:
+        - { action: sync+restart, path: ./services/runner/src, target: /app/src } # plain TS run by node: no image rebuild
+        - { action: rebuild, path: ./services/runner/package.json }
+  egress:
+    develop:
+      watch:
+        - { action: sync+restart, path: ./services/egress/src, target: /app/src }
+volumes:
+  dev-data:

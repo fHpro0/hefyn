@@ -1,0 +1,11 @@
+*.log
+.DS_Store
+.astro
+.env
+.playwright-mcp
+.screenshots
+data
+dist
+node_modules
+services/*/target
+web/.astro

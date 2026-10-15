@@ -1,0 +1,48 @@
+{
+  "name": "hefyn",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "concurrently": "^10.0.6"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.8",
+    "@astrojs/react": "^7.1.0",
+    "@flue/cli": "^2.3.0",
+    "@flue/react": "^2.3.0",
+    "@flue/runtime": "^2.3.0",
+    "@flue/sdk": "^2.3.0",
+    "@flue/vite": "^2.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/schibsted-grotesk": "^5.3.0",
+    "@hono/node-server": "^2.1.5",
+    "@modelcontextprotocol/client": "2.0.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.4.0",
+    "better-auth": "^1.7.10",
+    "hono": "^4.13.13",
+    "lucide-react": "^1.57.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-markdown": "^10.1.0",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.3.4"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n agent,web \"bun run dev:agent\" \"bun run dev:web\"",
+    "build": "vite build && bun build src/web.ts --target node --packages external --outfile dist/web-server.mjs && astro build --root web",
+    "start": "node dist/server.mjs",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p web",
+    "test": "bun run build && cargo build --manifest-path services/redact/Cargo.toml && node --test test/*.test.ts",
+    "dev:agent": "node src/dev/agent.mjs",
+    "dev:web": "concurrently -k -n api,ui \"PORT=5173 node --watch-path=src src/web.ts\" \"astro dev --root web --port 4321\"",
+    "dev:web:docker": "concurrently -k -n api,ui \"PORT=5173 node --watch-path=src src/web.ts\" \"astro dev --root web --host 0.0.0.0 --port 4321\"",
+    "dev:docker": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --watch",
+    "init": "bun scripts/init-env.ts"
+  },
+  "license": "AGPL-3.0-only"
+}

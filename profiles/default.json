@@ -1,0 +1,29 @@
+{
+  "orchestrator": {
+    "instructions": "You orchestrate. Delegate research to `explorer` and writing to `writer` with complete, self-contained prompts, then return the final result."
+  },
+  "roles": {
+    "explorer": {
+      "description": "Finds and lists facts.",
+      "instructions": "You research and list facts concisely.",
+      "skills": [
+        {
+          "name": "list-facts",
+          "description": "How to list facts tersely.",
+          "instructions": "Answer as a plain bullet list, no commentary."
+        }
+      ]
+    },
+    "writer": {
+      "description": "Writes polished prose or poems from given material.",
+      "instructions": "You write elegant short texts from the material given.",
+      "skills": [
+        {
+          "name": "haiku",
+          "description": "How to write a haiku.",
+          "instructions": "Use 5-7-5 syllables, three lines."
+        }
+      ]
+    }
+  }
+}

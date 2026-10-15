@@ -1,0 +1,12 @@
+# Dev image: bun installs and runs the scripts, node runs the servers (node:sqlite). node_modules stays in the image
+# (Linux native binaries); sources arrive through Compose Watch, never a bind mount.
+FROM node:24-slim
+RUN apt-get update && apt-get install -y --no-install-recommends procps && rm -rf /var/lib/apt/lists/* # `concurrently -k` needs ps to stop children
+COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
+WORKDIR /app
+COPY package.json bun.lock* ./
+RUN bun install --frozen-lockfile
+COPY . .
+ENV HEFYN_DATA_DIR=/data HEFYN_DEV_HOST=0.0.0.0
+VOLUME /data
+CMD ["bun", "run", "dev:web:docker"]

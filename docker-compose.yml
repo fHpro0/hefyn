@@ -1,0 +1,110 @@
+name: hefyn
+# web (auth, /api, UI, guarded proxy) and agent (Flue runtime) are two processes of one image, so the agent can
+# restart on its own whenever no task is running. Only web is published.
+#
+# Network layout (privacy: no model request can leave except through the redaction gate and the egress proxy):
+#   core       internal-only (no route out): web, agent, redact, runner, egress talk here
+#   public     internet: web (GitHub imports), redact (model download), egress
+#   hefyn-mcp  internet, fixed name: egress and the Playwright containers the runner starts
+# The agent sits on `core` only. Its sole way out is the egress proxy (HTTPS_PROXY), which allows connected providers only.
+x-app: &app
+  build: .
+  image: hefyn-app
+  volumes: [hefyn-data:/data]
+  restart: unless-stopped
+x-env: &env
+  HEFYN_SECRET: ${HEFYN_SECRET:?run "bun run init" to create .env}
+  HEFYN_INTERNAL_TOKEN: ${HEFYN_INTERNAL_TOKEN:?run "bun run init" to create .env}
+
+services:
+  web:
+    <<: *app
+    command: ["node", "dist/web-server.mjs"]
+    ports: ["3000:3000"]
+    environment:
+      <<: *env
+      HEFYN_URL: ${HEFYN_URL:-http://localhost:3000}
+      HEFYN_AGENT_URL: http://agent:3000
+      HEFYN_REDACT_URL: http://redact:8787 # hub content screening, privacy status
+      HEFYN_RUNNER_URL: http://runner:8790 # Files API for users with sandbox.shell goes through their container
+      HEFYN_ALLOW_NO_GLINER: ${HEFYN_ALLOW_NO_GLINER:-}
+      HEFYN_TRUSTED_PROXIES: ${HEFYN_TRUSTED_PROXIES:-} # reverse proxy IPs/CIDRs whose X-Forwarded-For is believed
+    networks: [core, public]
+    depends_on:
+      agent: { condition: service_healthy }
+      redact: { condition: service_healthy }
+  agent:
+    <<: *app
+    environment:
+      <<: *env
+      HEFYN_REDACT_URL: http://redact:8787
+      HEFYN_DRAIN_TIMEOUT_MS: ${HEFYN_DRAIN_TIMEOUT_MS:-600000}
+      HEFYN_RUNNER_URL: http://runner:8790
+      HEFYN_ALLOW_NO_GLINER: ${HEFYN_ALLOW_NO_GLINER:-}
+      # Everything that leaves goes through the egress proxy; internal services are reached directly.
+      HTTP_PROXY: http://hefyn:${HEFYN_INTERNAL_TOKEN:?run "bun run init" to create .env}@egress:3128
+      HTTPS_PROXY: http://hefyn:${HEFYN_INTERNAL_TOKEN}@egress:3128
+      NO_PROXY: localhost,127.0.0.1,redact,runner,web,egress
+      NODE_USE_ENV_PROXY: "1"
+    networks: [core]
+    depends_on:
+      redact: { condition: service_healthy }
+      runner: { condition: service_healthy }
+      egress: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/',{headers:{'x-hefyn-internal':process.env.HEFYN_INTERNAL_TOKEN}}).then(r=>process.exit(r.status<500?0:1),()=>process.exit(1))"]
+      interval: 10s
+      timeout: 4s
+      retries: 12
+      start_period: 40s
+  # Never published. The GLiNER model downloads into the volume on first start; the service is healthy only when GLiNER is loaded.
+  # GLiNER is mandatory in production: HEFYN_REDACT_GLINER=off needs HEFYN_ALLOW_NO_GLINER=1 (dev/test) or the agent refuses to start.
+  redact:
+    build: ./services/redact
+    environment:
+      HEFYN_REDACT_GLINER: ${HEFYN_REDACT_GLINER:-on}
+    volumes: [redact-models:/data/models]
+    networks: [core, public]
+    restart: unless-stopped
+  # Forward proxy with a host allowlist (derived from app.db by web). Requires the internal token as Proxy-Authorization.
+  egress:
+    build: ./services/egress
+    image: hefyn-egress
+    environment:
+      HEFYN_INTERNAL_TOKEN: ${HEFYN_INTERNAL_TOKEN:?run "bun run init" to create .env}
+    networks: [core, public, hefyn-mcp]
+    restart: unless-stopped
+  # The only service with the Docker socket (root-equivalent): internal network, token, fixed images and flags only. See docs/SANDBOX.md.
+  runner:
+    build: ./services/runner
+    image: hefyn-runner
+    environment:
+      HEFYN_INTERNAL_TOKEN: ${HEFYN_INTERNAL_TOKEN:?run "bun run init" to create .env}
+      HEFYN_SANDBOX_IMAGE: hefyn-sandbox
+      HEFYN_SANDBOX_EGRESS: ${HEFYN_SANDBOX_EGRESS:-internet} # none = sandboxes get no network at all
+      HEFYN_RUNNER_MAX_SANDBOXES_PER_USER: ${HEFYN_RUNNER_MAX_SANDBOXES_PER_USER:-8} # one per active conversation (started on its first run) + the Files API container
+    volumes:
+      - hefyn-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks: [core]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8790/health',{headers:{'x-hefyn-internal':process.env.HEFYN_INTERNAL_TOKEN}}).then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 15s
+  # Build-only: `docker compose build` produces the image the runner starts for shells. Never run by compose.
+  sandbox-image:
+    build: ./services/sandbox-image
+    image: hefyn-sandbox
+    profiles: [build]
+networks:
+  core:
+    internal: true
+  public: {}
+  hefyn-mcp:
+    name: hefyn-mcp # fixed: the runner attaches Playwright containers to it
+volumes:
+  hefyn-data:
+  redact-models:

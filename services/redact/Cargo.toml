@@ -1,0 +1,21 @@
+[package]
+name = "hefyn-redact-service"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+# The crate was renamed hefyn -> warden upstream before this rev: it is `warden-redact` there.
+warden-redact = { git = "https://github.com/fHpro0/warden", rev = "fe15b9f0527552a163d539310e31acb058309fc6", features = ["gliner"] }
+axum = "0.8"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "time"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+
+# Upstream's own workspace patch is ignored for git dependencies; repeat it (newer GLiNER logits layout).
+[patch.crates-io]
+gline-rs = { git = "https://github.com/fHpro0/warden", rev = "fe15b9f0527552a163d539310e31acb058309fc6" }
