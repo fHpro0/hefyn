@@ -28,6 +28,8 @@ export function egressAllowlist(): string[] {
     provider(r.provider, r.base_url);
     try { if (JSON.parse(decrypt(r.enc)).type === 'oauth') (OAUTH_HOSTS[r.provider] ?? []).forEach((h) => out.add(`${h}:443`)); } catch { /* unreadable credential */ }
   }
+  // Storage add-ons (WebDAV): the proxy cannot tell users apart, so a connected add-on host is reachable for every agent request.
+  for (const r of db.prepare("SELECT url FROM storage_addons WHERE url IS NOT NULL").all() as any[]) out.add(hostKey(r.url));
   for (const r of db.prepare('SELECT url, enc FROM mcp_connectors').all() as any[]) {
     out.add(hostKey(r.url));
     // OAuth connectors also talk to their authorization server (discovery state holds its URLs).

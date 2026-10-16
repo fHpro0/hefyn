@@ -34,6 +34,61 @@ Data lives in the `hefyn-data` volume (`HEFYN_DATA_DIR`): `app.db` (auth, roles,
 connectors), `flue.db` (conversations) and `users/<id>/{files,tmp}`. Web and agent run as uid/gid 1000;
 volumes created by older versions need `docker run --rm -v <volume>:/d busybox chown -R 1000:1000 /d` once.
 
+## Getting the GLiNER model
+
+The redact service needs two files of [`knowledgator/gliner-pii-small-v1.0`](https://huggingface.co/knowledgator/gliner-pii-small-v1.0)
+(`tokenizer.json` 3.6 MB and `onnx/model_quint8.onnx` 83 MB). Whatever the source, hefyn only uses files whose size and SHA-256
+match the pinned list in `src/server/redact/models.ts`; anything else is rejected. `HEFYN_GLINER_SOURCE` chooses the source
+(default `huggingface`). The redact service never downloads anything: it has no internet and only reads and verifies the files.
+The Models page (Privacy) shows the source and the state (`ready`, `missing`, `downloading`, `invalid`, `error`); the same is in
+`GET /api/runtime` under `privacy` (`glinerSource`, `glinerState`, `glinerDetail`, `glinerHost`).
+
+| Source | Who fetches | Network use |
+|---|---|---|
+| `huggingface` | `web` on first start, into the `redact-models` volume | Hugging Face (redirects to its CDN, which is AWS-hosted) |
+| `mirror` | `web`, from `HEFYN_GLINER_BASE_URL` | only that https host; a redirect to another host is refused |
+| `image` | nobody at runtime; baked at build time into `/opt/hefyn/models/gliner` | none at runtime |
+| `local` | nobody; files in `HEFYN_GLINER_DIR` (default `models/gliner` in the data volume) or uploaded in the UI | none |
+
+**Mirror.** Serve the same relative layout over https from any static file server, an object store, or a Nextcloud public share
+(direct-download links; the base URL must resolve `<base>/tokenizer.json` and `<base>/onnx/model_quint8.onnx`):
+
+```
+https://files.example.com/gliner/tokenizer.json
+https://files.example.com/gliner/onnx/model_quint8.onnx
+```
+
+Set `HEFYN_GLINER_SOURCE=mirror` and `HEFYN_GLINER_BASE_URL=https://files.example.com/gliner`. Plain http is refused. A redirect is only
+followed within the same host. A file with a different hash is discarded, so the mirror does not need to be trusted. To fill a mirror,
+or to carry the files to an offline machine, run once on a machine with internet (add the mirror URL as the second argument to fetch from a mirror):
+
+```
+node scripts/gliner-fetch.ts ./gliner            # downloads from Hugging Face and verifies; bun works too
+```
+
+**Baked into the image.** `docker compose build --build-arg HEFYN_GLINER_BAKE=1` (or `HEFYN_GLINER_BAKE=1` in `.env`) downloads and verifies
+the files while building (add `--build-arg HEFYN_GLINER_BASE_URL=https://...` to build from a mirror) and stores them read-only in the image;
+that image then defaults to `HEFYN_GLINER_SOURCE=image` and `web` makes no model request at all. The default image does not contain the
+model and stays small (about 86 MB less).
+
+**Local files / upload.** `HEFYN_GLINER_SOURCE=local`: copy the files into the `redact-models` volume (`models/gliner/`) or point
+`HEFYN_GLINER_DIR` at a directory, for example a bind mount in a `docker-compose.override.yml`
+(`redact: { volumes: !override ["/srv/hefyn/gliner:/models:ro"] }`, `web` likewise read-write if you want uploads, and `HEFYN_GLINER_DIR=/models` in `.env`).
+Admins (permission `models.manage`) can also upload them in Models, Privacy, or with
+`POST /api/settings/privacy/gliner/upload` (multipart with the two files, or one `.tar` / `.zip`; at most 300 MB). Each file must have the exact
+pinned size and SHA-256, any other file in the upload is rejected (macOS/Windows junk files are ignored), names with `..` or absolute paths are
+refused, and files are stored atomically; the target path never comes from the upload. The redact service notices new files within seconds.
+
+**Licence.** The model card of the pinned repository declares `license: apache-2.0` (not gated; developed by Wordcab and Knowledgator).
+Apache-2.0 allows redistribution, including on a mirror or inside an image, provided you pass on the licence text and the attribution; keep a
+copy of the [licence](https://www.apache.org/licenses/LICENSE-2.0) and the model card with whatever you redistribute and say that the ONNX
+file is the quantized export published in that repository. hefyn does this for you: `scripts/gliner-fetch.ts` (and therefore the baked image,
+in `/opt/hefyn/models/gliner/`) writes `NOTICE.txt` (model, repo URL, pinned revision, authors, licence) and `LICENSE-Apache-2.0.txt` next to the
+model files and also fetches the model card `README.md` (pinned by SHA-256; the repo has no separate LICENSE file; if the card cannot be fetched
+the NOTICE and licence text are still written). A download by `web` writes the two notice files too. Uploads may include any of these three
+files (verified byte for byte) but never need to. If you mirror the files, put the same three next to them. The card does not describe the training data's own licensing; this is not legal
+advice, so check it for your use. hefyn itself does not ship the model.
+
 ## Reverse proxy and client IPs
 
 hefyn uses the socket peer as the client IP for rate limiting. Behind a reverse proxy, set

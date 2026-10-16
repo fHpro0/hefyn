@@ -38,6 +38,9 @@ CREATE TABLE IF NOT EXISTS redact_audit (
 -- Connectors: per-user model credentials (encrypted pi-ai Credential JSON) and MCP servers (secret/tokens encrypted).
 CREATE TABLE IF NOT EXISTS user_credentials (user_id TEXT NOT NULL, provider TEXT NOT NULL, base_url TEXT, models TEXT, enc TEXT NOT NULL, created_at TEXT NOT NULL, PRIMARY KEY (user_id, provider));
 CREATE TABLE IF NOT EXISTS mcp_connectors (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, name TEXT NOT NULL, visibility TEXT NOT NULL, url TEXT NOT NULL, transport TEXT NOT NULL, auth TEXT NOT NULL, enc TEXT, created_at TEXT NOT NULL);
+-- Storage add-ons (docs/STORAGE.md): definition per add-on, credentials per user ('' = shared account of a team add-on).
+CREATE TABLE IF NOT EXISTS storage_addons (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, name TEXT NOT NULL, visibility TEXT NOT NULL, kind TEXT NOT NULL, url TEXT, connector_id TEXT, shared INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS storage_addon_creds (addon_id TEXT NOT NULL, user_id TEXT NOT NULL, enc TEXT NOT NULL, PRIMARY KEY (addon_id, user_id));
 CREATE TABLE IF NOT EXISTS user_builtins (user_id TEXT NOT NULL, id TEXT NOT NULL, enabled INTEGER NOT NULL, PRIMARY KEY (user_id, id));
 -- Agent restart coordinator (web and agent processes both read/write it): running -> draining -> restarting -> running.
 CREATE TABLE IF NOT EXISTS runtime (id INTEGER PRIMARY KEY CHECK (id = 1), state TEXT NOT NULL, requested_at TEXT, requested_by TEXT, running_tasks INTEGER NOT NULL DEFAULT 0, heartbeat_at TEXT);

@@ -1,5 +1,5 @@
-import { Loader2, LogIn, KeyRound, Plug, Plus, Server, Trash2, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { Cable, HardDrive, Loader2, LogIn, KeyRound, Plug, Plus, Server, Trash2, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { api, can, useLoad } from './api';
 import { ConnectModelDialog, OAuthFlow, type Start } from './ConnectModel';
 import Shell from './Shell';
@@ -9,6 +9,8 @@ import { buttonDanger, buttonGhost, buttonPrimary, Chip, ConfirmDialog, Dialog, 
 interface ModelConn { provider: string; name: string; kind: string; baseUrl?: string | null; createdAt: string }
 interface Mcp { id: string; name: string; url: string; transport: string; auth: string; visibility: 'private' | 'team'; mine: boolean; connected: boolean; sharedAccount?: boolean; builtin?: boolean; enabled?: boolean; note?: string }
 
+interface Addon { id: string; name: string; kind: 'webdav' | 'mcp'; visibility: 'private' | 'team'; mine: boolean; mount: string; url?: string; sharedAccount?: boolean; connector?: string; connected: boolean }
+
 export default function Connectors() {
   return <Shell>{(me, rt) => <Content team={can(me, 'profiles.edit_team')} managed={can(me, 'mcp.run_managed')} imagesAllowed={rt?.privacy?.imagesAllowed} />}</Shell>;
 }
@@ -17,6 +19,17 @@ export default function Connectors() {
 function Content({ team, managed, imagesAllowed }: { team: boolean; managed: boolean; imagesAllowed?: boolean }) {
   const models = useLoad<ModelConn[]>('/api/connectors/models');
   const mcp = useLoad<Mcp[]>('/api/connectors/mcp');
+  const addons = useLoad<Addon[]>('/api/storage-addons');
+  const [storageDlg, setStorageDlg] = useState(false);
+  const [login, setLogin] = useState<Addon>();
+  const [testingAddon, setTestingAddon] = useState<string>();
+  useEffect(() => { if (location.hash === '#storage' && addons.data) document.getElementById('storage')?.scrollIntoView(); }, [!!addons.data]);
+  const testAddon = async (a: Addon) => {
+    setTestingAddon(a.id);
+    try { const r = await api<{ ok: boolean; entries?: number; readonly?: boolean; error?: string }>(`/api/storage-addons/${a.id}/test`, 'POST', {}); toast(r.ok ? `${a.name} works. ${r.entries} items in the top folder${r.readonly ? ' (read only)' : ''}.` : `${a.name} did not answer: ${r.error ?? 'connection failed'}`, !r.ok); }
+    catch (x) { toast(`${a.name} did not answer: ${(x as Error).message}`, true); }
+    setTestingAddon(undefined);
+  };
   const [dlg, setDlg] = useState<'model' | 'mcp' | undefined>(location.hash === '#connect' ? 'model' : undefined);
   const [signin, setSignin] = useState<Mcp>();
   const [token, setToken] = useState<Mcp>();
@@ -28,7 +41,7 @@ function Content({ team, managed, imagesAllowed }: { team: boolean; managed: boo
     setTesting(undefined);
   };
   const [del, setDel] = useState<{ label: string; run: () => Promise<unknown> }>();
-  const done = (msg: string) => { setDlg(undefined); toast(msg); models.reload(); mcp.reload(); dispatchEvent(new Event('hefyn-me')); };
+  const done = (msg: string) => { setDlg(undefined); toast(msg); models.reload(); mcp.reload(); addons.reload(); dispatchEvent(new Event('hefyn-me')); };
   const servers = mcp.data?.filter((s) => !s.builtin || managed);
   return (
     <Page title="Connectors" hint="Connect your own model accounts and the tools hefyn can use for you. Private connections are visible only to you.">
@@ -67,6 +80,39 @@ function Content({ team, managed, imagesAllowed }: { team: boolean; managed: boo
           ))}
           <div className="py-4"><button className={buttonGhost} onClick={() => setDlg('mcp')}><Plus size={15} aria-hidden />Add a server</button></div></>}
       </Section>
+      <div id="storage"><Section title="Storage">
+        <Err>{addons.error}</Err>
+        {addons.data && !addons.data.length ? <Empty icon={<HardDrive size={26} />} action={<button className={buttonPrimary} onClick={() => setStorageDlg(true)}>Add storage</button>}>No external storage yet. Connect Nextcloud, ownCloud or a NAS (WebDAV), or an MCP server with file tools. It shows up as a folder in Files and agents can read and write there.</Empty> : addons.data && <>
+          {addons.data.map((a) => (
+            <Row key={a.id} wide title={<span className="inline-flex items-center gap-2"><Cable size={15} aria-hidden className="text-seal" />{a.name}</span>} hint={<span className="font-mono text-[13px] break-all">{a.mount}{a.url ? ` · ${a.url}` : a.connector ? ` · via ${a.connector}` : ''}</span>}>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Chip tone="seal">{a.kind === 'webdav' ? 'WebDAV' : 'MCP storage'}</Chip>
+                <Chip tone={a.visibility === 'team' ? 'blue' : 'neutral'}>{a.visibility === 'team' ? 'Team' : 'Private'}</Chip>
+                {a.sharedAccount && <span title="Everyone uses the same account on this storage" tabIndex={0}><Chip tone="seal">Shared account</Chip></span>}
+                <Chip tone={a.connected ? 'ok' : 'caution'}>{a.connected ? 'Connected' : 'Needs sign-in'}</Chip>
+                <span className="grow" />
+                <button className={buttonGhost} onClick={() => testAddon(a)} disabled={testingAddon === a.id}>{testingAddon === a.id ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <Zap size={14} aria-hidden />}Test</button>
+                {a.kind === 'webdav' && (!a.sharedAccount || team) && <button className={buttonGhost} onClick={() => setLogin(a)}><KeyRound size={14} aria-hidden />{a.connected ? 'Replace login' : 'Set login'}</button>}
+                {a.mine && <button className="rounded-lg p-2 text-muted hover:bg-danger/10 hover:text-danger-ink" aria-label={`Remove ${a.name}`} onClick={() => setDel({ label: `Remove ${a.name}?`, run: () => api(`/api/storage-addons/${a.id}`, 'DELETE').then(() => done('Removed')) })}><Trash2 size={15} /></button>}
+              </div>
+            </Row>
+          ))}
+          <div className="py-4"><button className={buttonGhost} onClick={() => setStorageDlg(true)}><Plus size={15} aria-hidden />Add storage</button></div></>}
+      </Section></div>
+      {storageDlg && <StorageDialog team={team} servers={(mcp.data ?? []).filter((s) => !s.builtin && (s.visibility === 'team' ? team : s.mine) && !addons.data?.some((a) => a.kind === 'mcp' && a.connector === s.name))} onClose={() => setStorageDlg(false)} onDone={() => { setStorageDlg(false); done('Storage added'); }} />}
+      {login && (
+        <Dialog title={`${login.connected ? 'Replace' : 'Set'} the login for ${login.name}`} onClose={() => setLogin(undefined)}>
+          <form className="grid gap-3" onSubmit={async (e) => {
+            e.preventDefault();
+            const f = Object.fromEntries(new FormData(e.currentTarget) as any) as Record<string, string>;
+            try { await api(`/api/storage-addons/${login.id}/credentials`, 'PUT', f); setLogin(undefined); done('Login saved'); } catch (x) { toast((x as Error).message, true); }
+          }}>
+            <Field label="Username"><Input name="username" required autoComplete="off" autoFocus /></Field>
+            <Field label="App password"><Input name="password" type="password" required autoComplete="off" /></Field>
+            <div className="flex justify-end gap-2"><button type="button" className={buttonGhost} onClick={() => setLogin(undefined)}>Cancel</button><button className={buttonPrimary}>Save login</button></div>
+          </form>
+        </Dialog>
+      )}
       {dlg === 'model' && <ConnectModelDialog scope="me" onClose={() => setDlg(undefined)} onDone={() => done('Connected')} />}
       {dlg === 'mcp' && <McpDialog team={team} onClose={() => setDlg(undefined)} onDone={() => done('Server added')} />}
       {token && (
@@ -119,6 +165,39 @@ function McpDialog({ team, onClose, onDone }: { team: boolean; onClose: () => vo
           <div className="flex justify-end gap-2"><button type="button" className={buttonGhost} onClick={onClose}>Cancel</button><button className={buttonPrimary}>Add server</button></div>
         </form>
       )}
+    </Dialog>
+  );
+}
+
+function StorageDialog({ team, servers, onClose, onDone }: { team: boolean; servers: Mcp[]; onClose: () => void; onDone: () => void }) {
+  const [kind, setKind] = useState<'webdav' | 'mcp'>('webdav');
+  const [visibility, setVisibility] = useState('private');
+  const [err, setErr] = useState('');
+  return (
+    <Dialog title="Add storage" onClose={onClose} wide>
+      <form className="grid gap-3" onSubmit={async (e) => {
+        e.preventDefault(); setErr('');
+        const f = Object.fromEntries(new FormData(e.currentTarget) as any) as Record<string, string>;
+        try { await api('/api/storage-addons', 'POST', { kind, name: f.name || undefined, url: f.url, username: f.username, password: f.password, connectorId: f.connectorId, visibility: f.visibility ?? 'private', sharedAccount: f.sharedAccount === 'on' }); onDone(); } catch (x) { setErr((x as Error).message); }
+      }}>
+        <Field label="Type"><Select value={kind} onChange={(e) => setKind(e.target.value as 'webdav' | 'mcp')}><option value="webdav">WebDAV (Nextcloud, ownCloud, NAS)</option><option value="mcp">Use an MCP server as storage</option></Select></Field>
+        <Field label="Folder name"><Input name="name" required={kind === 'webdav'} pattern="[a-z0-9][a-z0-9\-]{0,39}" placeholder="nextcloud" title="Lowercase letters, digits and dashes. Agents see it as /files/<name>." /></Field>
+        {kind === 'webdav' ? <>
+          <Field label="WebDAV URL"><Input name="url" type="url" required placeholder="https://cloud.example.com/remote.php/dav/files/ada/" /></Field>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Username"><Input name="username" required autoComplete="off" /></Field>
+            <Field label="App password"><Input name="password" type="password" required autoComplete="off" /></Field>
+          </div>
+          <p className="text-xs text-muted">Use an app password, not your main password. It is stored encrypted and only used for your own requests. Only https addresses are accepted.</p>
+        </> : <>
+          <Field label="MCP server"><Select name="connectorId" required defaultValue="">{<option value="" disabled>Choose a server</option>}{servers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</Select></Field>
+          <p className="text-xs text-muted">The server must offer the file tools of the MCP filesystem server (list_directory, read_text_file, write_file and so on). Without write tools the folder is read only. Only text files work.</p>
+        </>}
+        {team && kind === 'webdav' && <Field label="Who can use it"><Select name="visibility" value={visibility} onChange={(e) => setVisibility(e.target.value)}><option value="private">Only me</option><option value="team">My team (everyone signs in with their own login)</option></Select></Field>}
+        {team && kind === 'webdav' && visibility === 'team' && <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="sharedAccount" className="size-4 accent-foreground" />Everyone uses this one account (shared login)</label>}
+        <Err>{err}</Err>
+        <div className="flex justify-end gap-2"><button type="button" className={buttonGhost} onClick={onClose}>Cancel</button><button className={buttonPrimary}>Add storage</button></div>
+      </form>
     </Dialog>
   );
 }

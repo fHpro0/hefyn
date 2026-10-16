@@ -2,6 +2,7 @@ import { Hono, type Context } from 'hono';
 import { posix } from 'node:path';
 import { Readable } from 'node:stream';
 import { fsFor } from './runner.ts';
+import { addonAt, isAddonPath } from './storage-addons.ts';
 import { StorageError, maxUploadBytes, quotaBytes, usage, userOfConversation } from './storage.ts';
 
 // Mount with e.g. app.route('/api', storageRoutes((c) => c.get('user')?.id)). Only /files is exposed (tmp is agent-only).
@@ -23,7 +24,7 @@ export function storageRoutes(getUserId: (c: Context) => string | undefined) {
 
   r.get('/files', handle(async (c, u) => {
     const path = files(c.req.query('path'));
-    return c.json({ path, entries: await fsFor(u).list(path) });
+    return c.json({ path, entries: await fsFor(u).list(path), addon: addonAt(u, path) ?? null }); // addon: set inside a storage add-on
   }));
 
   r.get('/files/download', handle(async (c, u) => {
@@ -32,7 +33,8 @@ export function storageRoutes(getUserId: (c: Context) => string | undefined) {
     if (!(await fs.stat(path)).isFile) throw new StorageError(400, 'not a file');
     const name = posix.basename(path);
     // Never rendered inline: forced download, opaque type, no sniffing, sandboxed CSP.
-    const body = fs.hostPath && fs.openRead ? (Readable.toWeb(fs.openRead(await fs.hostPath(path))) as ReadableStream) : new Blob([new Uint8Array(await fs.readFileBuffer(path))]);
+    const remote = await fs.addonStream(path); // storage add-on: streamed from there, size-capped
+    const body = remote ?? (fs.hostPath && fs.openRead ? (Readable.toWeb(fs.openRead(await fs.hostPath(path))) as ReadableStream) : new Blob([new Uint8Array(await fs.readFileBuffer(path))]));
     return new Response(body, { headers: {
       'content-type': 'application/octet-stream',
       'content-disposition': `attachment; filename="${name.replace(/[^\x20-\x7e]|["\\]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(name)}`,
@@ -81,7 +83,7 @@ export async function saveUploads(c: Context, userId: string, fs: ReturnType<typ
     // Cheap early reject before the body is parsed.
     const len = Number(c.req.header('content-length') ?? 0);
     const { used } = await usage(userId);
-    if (len > 0 && used + len > quotaBytes() + 64 * 1024) throw new StorageError(413, 'storage quota exceeded');
+    if (len > 0 && !isAddonPath(userId, dir) && used + len > quotaBytes() + 64 * 1024) throw new StorageError(413, 'storage quota exceeded'); // add-on storage has no local quota
     const form = await c.req.formData().catch(() => { throw new StorageError(400, 'expected multipart/form-data'); });
     const uploads = [...form.values()].filter((v): v is File => typeof v !== 'string');
     if (!uploads.length) throw new StorageError(400, 'no files');

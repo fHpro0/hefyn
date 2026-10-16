@@ -13,7 +13,7 @@ export interface Pkg {
   visibility: 'private' | 'team'; status: 'draft' | 'pending' | 'approved' | 'rejected'; rejectReason?: string;
   owner: { id: string; name: string }; installed: { me: boolean; team: boolean };
   guard: { flagged: boolean; reasons: string[] }; contains?: { skills: string[]; agents: string[]; mcp: string[] };
-  createdAt: string; updatedAt: string;
+  createdAt: string; updatedAt: string; storage?: boolean;
 }
 export interface Detail extends Pkg { manifest: Record<string, any> & { ignored?: (string | { path: string })[] }; files: { path: string; size: number }[]; readme?: string }
 
@@ -96,7 +96,7 @@ export function InstallMenu({ pkg, me, onChange }: { pkg: Pkg; me: Me; onChange:
   if (!can(me, 'hub.install') || (pkg.status !== 'approved' && !mineOnly)) return null;
   const go = async (target: 'me' | 'team') => {
     setMenu(false);
-    try { await api(`/api/hub/packages/${pkg.id}/install`, 'POST', { target }); pkg.kind === 'mcp' ? toast(`Installed ${pkg.name}`, false, { href: '/settings/connectors', label: 'Sign in in Connectors' }) : toast(`Installed ${pkg.name}`); onChange(); } catch (x) { toast((x as Error).message, true); }
+    try { await api(`/api/hub/packages/${pkg.id}/install`, 'POST', { target }); pkg.kind === 'mcp' ? toast(`Installed ${pkg.name}`, false, pkg.storage ? { href: '/settings/connectors#storage', label: 'Sign in, then use as storage' } : { href: '/settings/connectors', label: 'Sign in in Connectors' }) : toast(`Installed ${pkg.name}`); onChange(); } catch (x) { toast((x as Error).message, true); }
   };
   if (!team) return <button className={buttonPrimary} onClick={() => go('me')}>Install</button>;
   return (
@@ -324,7 +324,7 @@ function CreateForm({ initial, onDone, onCancel }: { initial?: Detail; onDone: (
       const f = Object.fromEntries(new FormData(e.currentTarget) as any) as Record<string, string>;
       const body = kind === 'skill' ? { kind, name: f.name, description: f.description, instructions: instr, files: files.filter((x) => x.path && x.content) }
         : kind === 'agent' ? { kind, name: f.name, description: f.description, instructions: instr, model: f.model || undefined, skills }
-        : { kind, name: f.name, description: f.description, url: f.url, transport: f.transport, auth };
+        : { kind, name: f.name, description: f.description, url: f.url, transport: f.transport, auth, storage: f.storage === 'on' };
       try { await (initial ? api(`/api/hub/packages/${initial.id}`, 'PATCH', body) : api('/api/hub/packages', 'POST', body)); toast(initial ? 'Saved as a new version' : 'Created as a private draft'); onDone(); } catch (x) { setErr((x as Error).message); }
     }}>
       {!initial && <div role="group" aria-label="Kind" className="flex gap-1.5">
@@ -358,6 +358,7 @@ function CreateForm({ initial, onDone, onCancel }: { initial?: Detail; onDone: (
           <Field label="Transport"><Select name="transport" defaultValue={m.transport ?? 'streamable-http'}><option value="streamable-http">Streamable HTTP</option><option value="sse">SSE</option></Select></Field>
           <Field label="Authentication"><Select value={auth} onChange={(e) => setAuth(e.target.value)}><option value="none">None</option><option value="bearer">Bearer token</option><option value="oauth">OAuth sign-in</option></Select></Field>
         </div>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="storage" className="size-4 accent-foreground" defaultChecked={m.storage} />This server has filesystem tools: offer it as storage (shown as a folder in Files)</label>
         {auth !== 'none' && <p className="text-xs text-muted">Each user supplies their own {auth === 'bearer' ? 'token' : 'sign-in'} when they install it.</p>}
       </>}
       <Err>{err}</Err>

@@ -7,10 +7,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { SandboxDiedError } from '@flue/runtime';
-import { containerFs, containerSandbox, containerSandboxFactory } from '../src/server/container-sandbox.ts';
 import { dockerClient, type Docker } from '../services/runner/src/docker.ts';
 import { checkLimits, demux, handleOf, idleHandles, loadConfig, parseExec, tokenOk, HttpError, type Config } from '../services/runner/src/logic.ts';
 import { createRunner } from '../services/runner/src/server.ts';
+
+// The sandbox code reaches app.db (storage add-ons): point it at a scratch dir before it is first imported.
+process.env.HEFYN_DATA_DIR = mkdtempSync(join(tmpdir(), 'hefyn-cs-db-'));
+const { containerFs, containerSandbox, containerSandboxFactory } = await import('../src/server/container-sandbox.ts');
 
 const TOKEN = 'test-token';
 const listen = (h: http.RequestListener) => new Promise<{ url: string; close: () => void }>((r) => { const s = http.createServer(h).listen(0, '127.0.0.1', () => r({ url: `http://127.0.0.1:${(s.address() as AddressInfo).port}`, close: () => s.close() })); });

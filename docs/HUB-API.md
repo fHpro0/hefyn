@@ -23,7 +23,7 @@ interface Pkg {
 | GET | /packages | ?q=&kind=&status=&mine=1 | Pkg[] (team-approved + own) | any |
 | GET | /packages/:id | | Pkg & { manifest: object; files: {path,size}[]; readme?: string } | can see |
 | GET | /packages/:id/file | ?path= | text/plain (no HTML) | can see |
-| POST | /packages | skill: {kind,name,description,instructions,files?:{path,content}[]} · agent: {kind,name,description,instructions,model?,skills?:string[]} · mcp: {kind,name,url,transport,auth:'none'\|'bearer'\|'oauth'} | Pkg (draft, private) | hub.install |
+| POST | /packages | skill: {kind,name,description,instructions,files?:{path,content}[]} · agent: {kind,name,description,instructions,model?,skills?:string[]} · mcp: {kind,name,url,transport,auth:'none'\|'bearer'\|'oauth',storage?:true} | Pkg (draft, private) | hub.install |
 | PATCH | /packages/:id | same fields | Pkg (new version → back to draft/pending) | owner |
 | DELETE | /packages/:id | | 204 | owner or hub.approve |
 | POST | /import | {url, ref?} (git URL: SKILL.md dirs, `.claude-plugin/plugin.json`, `agents/*.md`, `.mcp.json`, or a `marketplace.json`) | Pkg[] (private drafts) | hub.install |
@@ -42,6 +42,10 @@ prompt-injection guard over all text; `guard.flagged` is shown to reviewers, nev
 `commands/` are ignored (listed in manifest as `ignored`). Files are stored in the DB, served as text only.
 Installed for an agent run = team installs + caller's own installs: skills → `useSkill`, agents → subagents,
 mcp → MCP connections (same auth handling as Connectors).
+
+## Clarifications (v1.2)
+- mcp packages may declare `storage: true` ("this server has the filesystem server's tools"); `Pkg.storage` mirrors it and the manifest top level carries it.
+  Installing offers "use as storage" (link to Connectors > Storage); the user marks the installed connector as storage there once signed in. Never automatic.
 
 ## Clarifications (v1.1)
 - `GET /packages/:id` → `manifest` holds the editable fields: skill `{instructions}`, agent `{instructions, model?, skills: string[]}`

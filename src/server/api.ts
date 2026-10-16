@@ -8,11 +8,15 @@ import { isPermission, PERMISSIONS } from './permissions.ts';
 import { loadProfile } from './profile.ts';
 import { connect, connectedIds, connectedModels, disconnect, listProviders, validate } from './providers.ts';
 import { auditFor, imagesAllowed, sealsFor, setImagesAllowed, sidecarHealth } from './privacy.ts';
+import { glinerInfo, invalidateGlinerInfo } from './redact/download.ts';
+import { modelDir, sourceOf } from './redact/models.ts';
+import { MAX_UPLOAD, UploadError, saveModelFiles } from './redact/upload.ts';
 import { availableModels, companyConnections, modelAllowed } from './connectors.ts';
 import { connectorRoutes } from './connectors-routes.ts';
 import { hubRoutes } from './hub-routes.ts';
 import { removeHubConnectors, upsertHubConnectors } from './mcp.ts';
 import { fsFor } from './runner.ts';
+import { storageAddonRoutes } from './storage-addon-routes.ts';
 import { saveUploads, storageRoutes } from './storage-routes.ts';
 import { requestRestart, runtimeInfo } from './runtime.ts';
 import { usageSummary, userOfConversation } from './usage.ts';
@@ -76,6 +80,7 @@ api.patch('/conversations/:id', requirePermission('models.use'), async (c) => {
 });
 api.get('/models/available', requirePermission('models.use'), (c) => c.json(availableModels(c.var.me.id)));
 api.route('/connectors', connectorRoutes);
+api.route('/storage-addons', storageAddonRoutes);
 api.route('/hub', hubRoutes({
   onMcpInstall: (me, target, list) => upsertHubConnectors(me.id, target === 'team' ? 'team' : 'private', list),
   onMcpUninstall: (me, target, id) => removeHubConnectors(me.id, target === 'team' ? 'team' : 'private', `hub:${id}`),
@@ -92,15 +97,36 @@ api.post('/conversations/:id/attachments', requirePermission('models.use'), asyn
 });
 
 // `privacy.gliner` false = the redaction service runs without GLiNER (only allowed with HEFYN_ALLOW_NO_GLINER=1): show a red warning.
-const privacy = async () => ({ gliner: (await sidecarHealth()).gliner, imagesAllowed: imagesAllowed() });
+// `glinerSource` / `glinerState` / `glinerDetail` / `glinerHost`: where the model comes from and whether it is in place (see redact/download.ts).
+const privacy = async () => {
+  const [h, g] = await Promise.all([sidecarHealth(), glinerInfo()]);
+  return { gliner: h.gliner, glinerSource: g.source, glinerState: g.state, glinerDetail: g.detail, glinerHost: g.host, imagesAllowed: imagesAllowed() };
+};
 api.get('/runtime', requireAuth, async (c) => c.json({ ...(await runtimeInfo()), privacy: await privacy() }));
-api.get('/settings/privacy', requirePermission('models.manage'), async (c) => c.json({ allowImages: imagesAllowed(), gliner: (await sidecarHealth()).gliner }));
+api.get('/settings/privacy', requirePermission('models.manage'), async (c) => c.json({ allowImages: imagesAllowed(), ...(await privacy()) }));
 // GLiNER cannot read images: by default the gate replaces them with text; this lets them through unredacted (audited as IMAGE_SENT_UNREDACTED).
 api.post('/settings/privacy', requirePermission('models.manage'), async (c) => {
   const { allowImages } = await c.req.json().catch(() => ({}));
   if (typeof allowImages !== 'boolean') return bad(c, 'allowImages must be a boolean');
   setImagesAllowed(allowImages);
   return c.json({ allowImages });
+});
+// Source `local`: the admin uploads the pinned GLiNER files (multipart of the files, or one .tar/.zip). Every file is verified against the
+// pinned size + SHA-256 before anything is written; anything else is rejected.
+api.post('/settings/privacy/gliner/upload', requirePermission('models.manage'), async (c) => {
+  if (sourceOf() !== 'local') return bad(c, 'uploads are only possible with HEFYN_GLINER_SOURCE=local', 409);
+  if (Number(c.req.header('content-length') ?? 0) > MAX_UPLOAD) return bad(c, 'upload too large', 413);
+  try {
+    const form = await c.req.formData().catch(() => { throw new UploadError(400, 'expected a multipart upload'); });
+    const inputs = [];
+    for (const v of form.values()) if (typeof v !== 'string') inputs.push({ name: v.name, data: new Uint8Array(await v.arrayBuffer()) });
+    const saved = saveModelFiles(modelDir(), inputs);
+    invalidateGlinerInfo();
+    return c.json({ saved, ...(await glinerInfo()) });
+  } catch (e) {
+    if (e instanceof UploadError) return bad(c, e.message, e.status);
+    return bad(c, `could not store the model files: ${(e as Error).message}`, 500);
+  }
 });
 api.post('/runtime/restart', requirePermission('models.manage'), async (c) => (requestRestart(c.var.me.email), c.json(await runtimeInfo())));
 

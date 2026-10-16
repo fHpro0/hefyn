@@ -145,16 +145,25 @@ export const mountable = (userId: string) => visible(userId).map((r) => ({
   token: r.auth === 'none' ? undefined : () => tokenOf(r.id, userId),
 }));
 
+/** Connected MCP client for a visible connector (own or team) with the user's own credentials; the caller closes it. */
+export async function openClient(userId: string, id: string): Promise<Client> {
+  const r = visible(userId).find((x) => x.id === id);
+  if (!r) throw new Error('unknown connector');
+  const requestInit = r.auth === 'none' ? undefined : { headers: { authorization: `Bearer ${await tokenOf(id, userId)}` } };
+  const url = new URL(r.url);
+  const client = new Client({ name: 'hefyn', version: '1' });
+  try { await client.connect(r.transport === 'sse' ? new SSEClientTransport(url, { requestInit }) : new StreamableHTTPClientTransport(url, { requestInit })); } catch (e) { await client.close().catch(() => {}); throw e; }
+  return client;
+}
+/** For storage add-ons: name and sharing of a connector the user can see. */
+export const connectorFor = (userId: string, id: string) => { const r = visible(userId).find((x) => x.id === id); return r && { id: r.id, name: r.name, owner: r.owner_id, visibility: r.visibility }; };
+export const connectorExists = (id: string) => !!get(id);
+
 /** Connect, list tools, disconnect: for the "test connection" button. Never throws. */
 export async function testConnector(userId: string, id: string): Promise<{ ok: boolean; tools?: string[]; error?: string }> {
-  const r = visible(userId).find((x) => x.id === id);
-  if (!r) return { ok: false, error: 'unknown connector' };
   let client: Client | undefined;
   try {
-    const requestInit = r.auth === 'none' ? undefined : { headers: { authorization: `Bearer ${await tokenOf(id, userId)}` } };
-    const url = new URL(r.url);
-    client = new Client({ name: 'hefyn', version: '1' });
-    await client.connect(r.transport === 'sse' ? new SSEClientTransport(url, { requestInit }) : new StreamableHTTPClientTransport(url, { requestInit }));
+    client = await openClient(userId, id);
     return { ok: true, tools: (await client.listTools()).tools.map((t) => t.name) };
   } catch (e) {
     return { ok: false, error: (e as Error).message };

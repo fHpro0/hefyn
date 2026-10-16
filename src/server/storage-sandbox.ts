@@ -1,12 +1,13 @@
 import { posix } from 'node:path';
 import { SandboxOperationUnsupportedError, createEditTool, createReadTool, createWriteTool, sandboxFromDriver, type Sandbox, type SandboxDriver, type SandboxFactory } from '@flue/runtime';
+import { withAddons } from './storage-addons.ts';
 import { userFs } from './storage.ts';
 
 // The Flue side of per-user storage (agent process only); the pure filesystem part is storage.ts.
 
 /** Flue sandbox confined to the user's `/files` + this conversation's `/tmp`. No shell until the container sandbox. */
 export function userSandbox(opts: { userId: string; conversationId: string }): Sandbox {
-  const fs = userFs(opts);
+  const fs = withAddons(userFs(opts), opts.userId); // /files/<add-on> goes to the user's storage add-ons
   const driver: SandboxDriver = {
     readFile: fs.readFile, readFileBuffer: fs.readFileBuffer, writeFile: fs.writeFile, stat: fs.stat,
     readdir: fs.readdir, exists: fs.exists, mkdir: fs.mkdir, rm: fs.rm,
@@ -30,7 +31,7 @@ function listTool(sandbox: Sandbox) {
   return {
     name: 'list',
     label: 'List Files',
-    description: 'List files and directories. Paths: /files (persistent) and /tmp (scratch for this conversation). Set recursive to walk subdirectories.',
+    description: 'List files and directories. Paths: /files (persistent; connected storage add-ons appear as folders in it) and /tmp (scratch for this conversation). Set recursive to walk subdirectories.',
     parameters: { type: 'object', properties: { path: { type: 'string' }, recursive: { type: 'boolean' } }, required: [] },
     async execute(_id: string, params: { path?: string; recursive?: boolean }) {
       const out: string[] = [];

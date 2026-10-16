@@ -1,4 +1,5 @@
 import { SandboxDiedError, sandboxFromDriver, type Sandbox, type SandboxDriver, type SandboxFactory } from '@flue/runtime';
+import { isAddonPath, withAddons } from './storage-addons.ts';
 import { ContainerFsError, RunnerDownError, cleanPath, containerFs, type ContainerSandboxOptions } from './container-fs.ts';
 
 // Flue sandbox backed by a per-conversation container (see container-fs.ts and docs/SANDBOX.md).
@@ -9,8 +10,9 @@ const died = (e: unknown) => (e instanceof RunnerDownError ? new SandboxDiedErro
 const guarded = <A extends unknown[], R>(f: (...a: A) => Promise<R>) => async (...a: A): Promise<R> => { try { return await f(...a); } catch (e) { throw died(e); } };
 
 export function containerSandbox(opts: ContainerSandboxOptions): Sandbox {
-  const fs = containerFs(opts);
-  const writeFile = async (p: string, c: string | Uint8Array) => { if (await opts.overQuota?.()) throw new ContainerFsError('ENOSPC', QUOTA_MESSAGE); return fs.writeFile(p, c); };
+  // Add-on folders (/files/<name>) go to the add-on, not the container: no shell access to them, and no local quota for them.
+  const fs = withAddons(containerFs(opts), opts.userId);
+  const writeFile = async (p: string, c: string | Uint8Array) => { if (!isAddonPath(opts.userId, p) && await opts.overQuota?.()) throw new ContainerFsError('ENOSPC', QUOTA_MESSAGE); return fs.writeFile(p, c); };
   const driver: SandboxDriver = {
     readFile: guarded(fs.readFile), readFileBuffer: guarded(fs.readFileBuffer), writeFile: guarded(writeFile), stat: guarded(fs.stat),
     readdir: guarded(fs.readdir), exists: guarded(fs.exists), mkdir: guarded(fs.mkdir), rm: guarded(fs.rm),

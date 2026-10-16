@@ -49,7 +49,7 @@ before(async () => {
   redact = spawn('node', ['dist/redact-server.mjs'], { env: { ...process.env, HEFYN_REDACT_GLINER: 'off', PORT: String(RPORT), HEFYN_REDACT_HOST: '127.0.0.1', HEFYN_INTERNAL_TOKEN: TOKEN }, stdio: 'inherit' });
   for (let i = 0; i < 50 && !(await fetch(`http://127.0.0.1:${RPORT}/live`, { headers: { 'x-hefyn-internal': TOKEN } }).then((r) => r.ok, () => false)); i++) await new Promise((r) => setTimeout(r, 100));
   dataDir = mkdtempSync(join(tmpdir(), 'hefyn-e2e-'));
-  const env = { ...process.env, HEFYN_URL: base, NODE_ENV: 'production', HEFYN_SECRET: 'test-secret-test-secret-test-secret-1234', HEFYN_DATA_DIR: dataDir, HEFYN_INTERNAL_TOKEN: TOKEN, HEFYN_ALLOW_PRIVATE_URLS: '1', HEFYN_ALLOW_NO_GLINER: '1', HEFYN_REDACT_URL: `http://127.0.0.1:${RPORT}` }; // fake upstreams listen on 127.0.0.1
+  const env = { ...process.env, HEFYN_URL: base, NODE_ENV: 'production', HEFYN_SECRET: 'test-secret-test-secret-test-secret-1234', HEFYN_DATA_DIR: dataDir, HEFYN_INTERNAL_TOKEN: TOKEN, HEFYN_ALLOW_PRIVATE_URLS: '1', HEFYN_ALLOW_NO_GLINER: '1', HEFYN_REDACT_GLINER: 'off', HEFYN_REDACT_URL: `http://127.0.0.1:${RPORT}` }; // fake upstreams listen on 127.0.0.1
   const spawnAgent = () => {
     agent = spawn('node', ['dist/server.mjs'], { env: { ...env, PORT: String(APORT), HEFYN_DRAIN_TIMEOUT_MS: '5000' }, stdio: 'ignore' });
     agent.on('exit', () => { if (!stopping) setTimeout(spawnAgent, 300); });
@@ -422,7 +422,12 @@ test('startup validation: placeholder or short secrets stop web with a one-line 
 
 test('privacy status and settings: GLiNER flag in /api/runtime, images off by default, admin-only toggle', async () => {
   const rt = (await admin.req('/api/runtime')).json;
-  assert.deepEqual(Object.keys(rt.privacy).sort(), ['gliner', 'imagesAllowed']);
+  assert.deepEqual(Object.keys(rt.privacy).sort(), ['gliner', 'glinerDetail', 'glinerSource', 'glinerState', 'imagesAllowed']);
+  assert.deepEqual([rt.privacy.glinerSource, rt.privacy.glinerState], ['huggingface', 'missing']); // GLiNER switched off in this test stack
+  // model upload: admin only, and only with source `local` (here: huggingface)
+  assert.equal((await anon.req('/api/settings/privacy/gliner/upload', 'POST', {})).status, 401);
+  assert.equal((await worker.req('/api/settings/privacy/gliner/upload', 'POST', {})).status, 403);
+  assert.equal((await admin.req('/api/settings/privacy/gliner/upload', 'POST', {})).status, 409);
   assert.equal(rt.privacy.gliner, false); // the test sidecar runs with GLiNER off (HEFYN_ALLOW_NO_GLINER=1): the UI shows the red warning
   assert.equal(rt.privacy.imagesAllowed, false);
   assert.equal((await worker.req('/api/settings/privacy', 'POST', { allowImages: true })).status, 403);

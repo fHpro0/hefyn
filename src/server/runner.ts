@@ -3,6 +3,7 @@ import { posix } from 'node:path';
 import { db } from './appdb.ts';
 import { ContainerFsError, cleanPath, containerFs } from './container-fs.ts';
 import type { Permission } from './permissions.ts';
+import { withAddons } from './storage-addons.ts';
 import { StorageError, maxUploadBytes, quotaBytes, usageBytes, userFs, type Entry } from './storage.ts';
 
 // Container sandbox mode, one per user: a user with `sandbox.shell` (and a configured runner) gets the container for
@@ -73,9 +74,9 @@ export function containerStorage(userId: string, conversationId = 'files') {
   return self;
 }
 
-/** Storage for the Files API and attachments: the container for shell users, the confined host dir for everyone else. */
+/** Storage for the Files API and attachments: the container for shell users, the confined host dir for everyone else; storage add-ons are mounted under /files. */
 export function fsFor(userId: string, conversationId?: string) {
-  return shellEnabled(userId) ? containerStorage(userId, conversationId) : userFs({ userId, conversationId });
+  return withAddons(shellEnabled(userId) ? containerStorage(userId, conversationId) : userFs({ userId, conversationId }), userId);
 }
 
 // ---- built-in managed connector: Playwright (browser) in its own container, started lazily by the runner ----

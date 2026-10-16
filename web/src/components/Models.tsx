@@ -1,5 +1,5 @@
-import { LogIn, Plug, Plus, RotateCw, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { LogIn, Plug, Plus, RotateCw, Trash2, Upload } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { api, can, useLoad, type Runtime } from './api';
 import { ConnectModelDialog } from './ConnectModel';
 import Shell from './Shell';
@@ -8,6 +8,53 @@ import { buttonDanger, buttonGhost, buttonPrimary, Chip, ConfirmDialog, Empty, E
 interface ProviderList { available: { id: string; name: string }[]; connected: (string | { id: string; name?: string; kind?: string; status?: string })[] }
 interface Connected { provider: string; name: string; models: { id: string; name: string }[] }
 interface Profile { model: string | null; agents: { name: string; description: string; model: string | null }[] }
+
+const SOURCE_LABEL = { huggingface: 'Downloaded from Hugging Face', mirror: 'Downloaded from a mirror', image: 'Built into the image', local: 'Provided by you' } as const;
+const STATE_LABEL = { ready: 'Ready', missing: 'Files missing', downloading: 'Downloading', invalid: 'Files invalid', error: 'Download failed' } as const;
+
+// Where the GLiNER model comes from and whether it is in place; with source "local" the admin can upload the files (verified server-side).
+function GlinerSource({ privacy }: { privacy: NonNullable<Runtime['privacy']> }) {
+  const input = useRef<HTMLInputElement>(null);
+  const [progress, setProgress] = useState<number>();
+  const [result, setResult] = useState<{ ok: boolean; text: string }>();
+  const { glinerSource: source, glinerState: state, glinerDetail: detail, glinerHost: host } = privacy;
+  if (!source || !state) return null;
+  const upload = (files: FileList | null) => {
+    if (!files?.length) return;
+    const form = new FormData();
+    for (const f of files) form.append('files', f, f.name);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/settings/privacy/gliner/upload');
+    xhr.upload.onprogress = (e) => e.lengthComputable && setProgress(Math.round((e.loaded / e.total) * 100));
+    xhr.onload = () => {
+      setProgress(undefined);
+      let j: { error?: string; state?: string } = {};
+      try { j = JSON.parse(xhr.responseText); } catch { /* not JSON */ }
+      setResult(xhr.status < 300 ? { ok: true, text: j.state === 'ready' ? 'Model files verified and saved. The redaction service picks them up in a few seconds.' : 'Files verified and saved. The other model file is still missing.' } : { ok: false, text: j.error ?? `Upload failed (HTTP ${xhr.status})` });
+      dispatchEvent(new Event('hefyn-rt'));
+    };
+    xhr.onerror = () => { setProgress(undefined); setResult({ ok: false, text: 'Upload failed: the connection was interrupted.' }); };
+    setResult(undefined); setProgress(0);
+    xhr.send(form);
+    if (input.current) input.current.value = '';
+  };
+  const hint = `${SOURCE_LABEL[source]}${host ? ` (${host})` : ''}.${detail && state !== 'ready' ? ` ${detail}` : ''}`;
+  return (
+    <Row title="GLiNER model" hint={hint}>
+      <div className="flex flex-col items-end gap-2">
+        <Chip tone={state === 'ready' ? 'ok' : state === 'downloading' ? 'seal' : 'alarm'}>{STATE_LABEL[state]}</Chip>
+        {source === 'local' && state !== 'ready' && (
+          <div className="flex items-center gap-3">
+            <input ref={input} type="file" multiple accept=".json,.onnx,.tar,.zip" className="sr-only" aria-label="GLiNER model files" onChange={(e) => upload(e.target.files)} />
+            <button className={buttonGhost} disabled={progress !== undefined} onClick={() => input.current?.click()}><Upload size={14} aria-hidden />{progress !== undefined ? `Uploading ${progress}%` : 'Upload model files'}</button>
+          </div>
+        )}
+        {progress !== undefined && <progress className="h-1 w-40" max={100} value={progress} aria-label="Upload progress" />}
+        {result && <p role="status" className={`max-w-sm text-right text-sm ${result.ok ? 'text-muted' : 'text-danger-ink'}`}>{result.text}</p>}
+      </div>
+    </Row>
+  );
+}
 
 export default function Models() {
   return <Shell>{(me, rt) => <Content rt={rt} admin={can(me, 'models.manage')} />}</Shell>;
@@ -80,6 +127,7 @@ function Content({ rt, admin }: { rt?: Runtime; admin: boolean }) {
       {admin && privacy && (
         <Section title="Privacy">
           <Row title="Redaction" hint="Personal data is replaced with seals before a request leaves hefyn."><Chip tone={privacy.gliner ? 'ok' : 'alarm'}>{privacy.gliner ? 'Pattern, entropy and GLiNER checks on' : 'GLiNER is off'}</Chip></Row>
+          <GlinerSource privacy={privacy} />
           <Row title="Egress" hint="Model traffic leaves hefyn only through the hefyn proxy."><Chip tone="ok">Enforced</Chip></Row>
           <Row title="Send images to models unredacted" hint="GLiNER cannot read images, so personal data inside them would reach the model. While this is off, images such as browser screenshots are removed before sending.">
             <Switch label="Send images to models unredacted" tone="caution" checked={privacy.imagesAllowed} onChange={(on) => (on ? setConfirmImages(true) : setImages(false))} />

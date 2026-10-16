@@ -19,7 +19,7 @@ type Files = Record<string, string>;
 type Auth = 'none' | 'bearer' | 'oauth';
 export interface SkillItem { name: string; description: string; instructions: string; files: Files; dir?: string }
 export interface AgentItem { name: string; description: string; instructions: string; model?: string; skills: string[]; file?: string }
-export interface McpItem { name: string; url: string; transport: 'streamable-http' | 'sse'; auth: Auth }
+export interface McpItem { name: string; url: string; transport: 'streamable-http' | 'sse'; auth: Auth; storage?: true }
 interface Items { skills: SkillItem[]; agents: AgentItem[]; mcp: McpItem[] }
 interface Manifest { items: Items; ignored: string[]; needsRunner: string[]; plugin?: Record<string, unknown> }
 export interface Source { type: 'ui' | 'git' | 'marketplace' | 'mcp-registry'; url?: string; ref?: string }
@@ -113,7 +113,7 @@ export function collect(files: Files, fallbackName = 'unnamed'): Manifest {
       try {
         const url = assertPublicUrl(e.url);
         const auth: Auth = ['none', 'bearer', 'oauth'].includes(e.auth) ? e.auth : e.headers && Object.keys(e.headers).some((h) => h.toLowerCase() === 'authorization') ? 'bearer' : 'none';
-        m.items.mcp.push({ name, url, transport: type === 'sse' ? 'sse' : 'streamable-http', auth });
+        m.items.mcp.push({ name, url, transport: type === 'sse' ? 'sse' : 'streamable-http', auth, ...(e.storage === true ? { storage: true as const } : {}) });
       } catch (err) { m.ignored.push(`mcp ${name}: ${(err as Error).message}`); }
     } else if (e.command) m.needsRunner.push(`${name}: stdio server, needs managed runner (phase 4)`);
   }
@@ -173,7 +173,7 @@ export function draftFromBody(b: any): Draft {
   if (kind === 'mcp') {
     if (!['http', 'sse', 'streamable-http'].includes(b.transport)) fail(400, 'transport must be http or sse');
     if (!['none', 'bearer', 'oauth'].includes(b.auth)) fail(400, 'auth must be none, bearer or oauth');
-    const files = { '.mcp.json': JSON.stringify({ mcpServers: { [name]: { type: b.transport, url: b.url, auth: b.auth } } }, null, 2) };
+    const files = { '.mcp.json': JSON.stringify({ mcpServers: { [name]: { type: b.transport, url: b.url, auth: b.auth, ...(b.storage === true ? { storage: true } : {}) } } }, null, 2) };
     const manifest = collect(files, name);
     if (!manifest.items.mcp.length) fail(400, manifest.ignored[0] ?? 'invalid MCP server');
     return { kind, name, description, files, manifest };
@@ -409,7 +409,7 @@ const publicManifest = (m: Manifest) => {
     // single-item packages expose their editable fields at top level (HUB-API v1.1); bundles list their contents
     ...(one && skills[0] ? { instructions: skills[0].instructions } : {}),
     ...(one && agents[0] ? { instructions: agents[0].instructions, ...(agents[0].model ? { model: agents[0].model } : {}), skills: agents[0].skills } : {}),
-    ...(one && mcp[0] ? { url: mcp[0].url, transport: mcp[0].transport, auth: mcp[0].auth } : {}),
+    ...(one && mcp[0] ? { url: mcp[0].url, transport: mcp[0].transport, auth: mcp[0].auth, ...(mcp[0].storage ? { storage: true } : {}) } : {}),
     skills: skills.map((s) => ({ name: s.name, description: s.description, files: Object.keys(s.files) })),
     agents: agents.map((a) => ({ name: a.name, description: a.description, model: a.model, skills: a.skills })),
     mcp, ignored: m.ignored, needsRunner: m.needsRunner, plugin: m.plugin,
@@ -425,6 +425,7 @@ function pkg(v: View, me: Viewer) {
     id: r.id, kind: r.kind, name: r.name, description: r.description, version: v.version, hash: v.hash, source: JSON.parse(r.source_json) as Source,
     visibility: r.visibility, status: v.status, ...(v.live && r.reject_reason ? { rejectReason: r.reject_reason } : {}),
     owner: { id: r.owner_id, name: ownerName(r.owner_id) }, installed: { me: inst('me'), team: inst('team') }, guard: g,
+    ...(v.manifest.items.mcp.some((m) => m.storage) ? { storage: true } : {}), // the server offers filesystem-style tools: "use as storage"
     ...(r.kind === 'bundle' ? { contains: { skills: v.manifest.items.skills.map((s) => s.name), agents: v.manifest.items.agents.map((a) => a.name), mcp: v.manifest.items.mcp.map((m) => m.name) } } : {}),
     createdAt: r.created_at, updatedAt: r.updated_at,
   };

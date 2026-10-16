@@ -37,7 +37,7 @@ export const useLoad = <T,>(path: string, deps: unknown[] = []) => {
   return { data, error, reload };
 };
 
-export interface Runtime { state: 'running' | 'draining' | 'restarting'; runningTasks: number; agentUp: boolean; requestedAt: string | null; requestedBy: string | null; privacy?: { gliner: boolean; imagesAllowed: boolean } }
+export interface Runtime { state: 'running' | 'draining' | 'restarting'; runningTasks: number; agentUp: boolean; requestedAt: string | null; requestedBy: string | null; privacy?: { gliner: boolean; glinerSource?: 'huggingface' | 'mirror' | 'image' | 'local'; glinerState?: 'ready' | 'missing' | 'downloading' | 'invalid' | 'error'; glinerDetail?: string; glinerHost?: string; imagesAllowed: boolean } }
 // Polls /api/runtime: every 3 s while not running, 15 s otherwise, and on focus or after 'hefyn-rt'. Errors keep the last value.
 export function useRuntime() {
   const [rt, setRt] = useState<Runtime>();

@@ -31,7 +31,7 @@ Owner only (404 otherwise), `Cache-Control: no-store`. `[{ name: "EMAIL_1", labe
 - Every model request is redacted by GLiNER (+ regex/entropy) before it leaves; blocked requests are audited with a reason. A model-API request that did not pass the gate is refused as a **bypass attempt** (audit `blocked`, `error` contains "bypass attempt").
 - Images: by default the gate replaces images (user images, tool-result images, screenshots) with the text `[image removed by the privacy layer]`; audit findings `IMAGE_REMOVED` x n.
   `GET/POST /api/settings/privacy` (permission `models.manage`) `{ allowImages: boolean }` lets images through unredacted (audit finding `IMAGE_SENT_UNREDACTED`).
-- `GET /api/runtime` additionally returns `privacy: { gliner: boolean, imagesAllowed: boolean }`. `gliner: false` means the redact service runs without GLiNER (or the model is still downloading or loading)
+- `GET /api/runtime` additionally returns `privacy: { gliner: boolean, glinerSource: 'huggingface'|'mirror'|'image'|'local', glinerState: 'ready'|'missing'|'downloading'|'invalid'|'error', glinerDetail?: string, glinerHost?: string, imagesAllowed: boolean }` (`glinerHost` for a mirror). `POST /api/settings/privacy/gliner/upload` (permission `models.manage`, only with `HEFYN_GLINER_SOURCE=local`, else 409): multipart of the pinned model files or one `.tar`/`.zip`, max 300 MB; every file is verified against the pinned size and SHA-256, anything else is a 400 with the reason; answers `{ saved, source, state, ... }`. `gliner: false` means the redact service runs without GLiNER (or the model is still downloading or loading)
   (only possible with `HEFYN_ALLOW_NO_GLINER=1` outside production): show a red warning. In production the gate fails closed without GLiNER (the agent refuses to start when GLiNER is switched off).
 
 ## Agent runtime / restart queue
@@ -62,6 +62,22 @@ New permission `sandbox.shell` (Admin yes, Worker no): bash/grep/glob in a conta
 
 `POST /api/conversations/:id/attachments` (owner only, multipart) stores into the conversation's scratch dir and returns
 `{ saved: [{ name, path: "/tmp/report.pdf", size }] }`; mention that path in the message so the agent can read it.
+
+### Storage add-ons
+
+External storage (WebDAV, or an MCP server with filesystem tools) mounted as `/files/<name>/...`; see `docs/STORAGE.md`. The Files API above works unchanged on those paths:
+`GET /api/files?path=<name>/sub` lists them (response also has `addon: { id, name, kind, visibility } | null`), the root listing shows each add-on as `{ type: "dir", addon: {...} }`,
+uploads/downloads/mkdir/rename/delete go through the add-on (not counted against the quota; per-file limit applies), downloads stay `attachment`. Cross-storage renames are refused (400).
+Add-on errors map to 404 (not found), 403 (denied / read only), 409 (exists, or "needs your credentials"), 413 (too large), 415 (binary on a text-only storage), 502 (server unreachable, login failed).
+
+Permission `models.use` (same as MCP connectors); team visibility and shared accounts need `profiles.edit_team`.
+- `GET /api/storage-addons` -> `[{ id, name, kind: "webdav"|"mcp", visibility, mine, mount: "/files/<name>", url?, sharedAccount?, connector?, connected }]` (own + team; `connected` = this user has credentials / the MCP connector is signed in for them)
+- `POST /api/storage-addons { kind: "webdav", name, url, username, password, visibility?, sharedAccount? }` or `{ kind: "mcp", connectorId, name? }` -> `{ id, mount }`.
+  `name` = lowercase slug (400), unique among visible add-ons (409), no local folder of that name (409). WebDAV URLs must be https, public, without credentials (400).
+  `visibility: "team"` / `sharedAccount: true` need `profiles.edit_team` (403 / 400 without team). An MCP add-on takes its visibility from the connector (the connector's owner, or a team editor for team connectors, may mark it).
+- `PUT /api/storage-addons/:id/credentials { username, password }` (WebDAV): the caller's own login; for a shared account only team editors.
+- `POST /api/storage-addons/:id/test` -> `{ ok, entries?, readonly?, error? }` (lists the root with the caller's credentials)
+- `DELETE /api/storage-addons/:id` (owner or Admin). Unknown or invisible ids are 404.
 
 ## Connectors
 
@@ -111,6 +127,7 @@ New permission `sandbox.shell` (Admin yes, Worker no): bash/grep/glob in a conta
 ## Hub
 
 See `docs/HUB-API.md` (contract) and `docs/HUB.md`. Mounted at `/api/hub`.
+Packages of kind `mcp` may carry `storage: true` (create/patch body, or `"storage": true` in `.mcp.json`): the server offers filesystem tools. `Pkg.storage` is then `true` and the UI points from the install toast to Connectors > Storage ("use MCP server as storage"). Nothing is mounted automatically.
 Installing an MCP package creates connector entries with `connected: false` until the user signs in (`PUT .../bearer` or the OAuth start flow):
 target `me` creates a private entry for the installer, target `team` creates ONE team-visible entry (OAuth: each user signs in for themselves; bearer: shared account set by a team editor). Uninstalling removes the entries of that package for that target.
 Installed skills and agents reach the agent automatically (team installs + the user's own); profile agents win name collisions.

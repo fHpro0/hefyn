@@ -1,10 +1,12 @@
-import { ChevronRight, Download, File as FileIcon, Folder, FolderPlus, HardDrive, Loader2, Pencil, Trash2, Upload } from 'lucide-react';
+import { Cable, ChevronRight, Download, File as FileIcon, Folder, FolderPlus, HardDrive, Loader2, Pencil, Trash2, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api, bytes, upload } from './api';
 import Shell, { navRow } from './Shell';
-import { buttonGhost, buttonPrimary, ConfirmDialog, Empty, Err, Input, Page, QuotaBar, Table, toast } from './ui';
+import { buttonGhost, buttonPrimary, Chip, ConfirmDialog, Empty, Err, Input, Page, QuotaBar, Table, toast } from './ui';
 
-interface Entry { name: string; type: 'file' | 'dir' | 'symlink'; size: number; mtime: string }
+interface AddonRef { id: string; name: string; kind: 'webdav' | 'mcp'; visibility: 'private' | 'team' }
+interface Entry { name: string; type: 'file' | 'dir' | 'symlink'; size: number; mtime: string; addon?: AddonRef }
+const SOURCE = { webdav: 'WebDAV', mcp: 'MCP storage' };
 interface Quota { used: number; quota: number }
 
 const join = (dir: string, name: string) => (dir ? `${dir}/${name}` : name);
@@ -13,9 +15,9 @@ const hashDir = () => decodeURIComponent(location.hash.slice(1));
 
 // Folder tree for the context pane: children load when a folder opens.
 function Tree({ dir, go, version }: { dir: string; go: (d: string) => void; version: number }) {
-  const [kids, setKids] = useState<Record<string, string[]>>({});
+  const [kids, setKids] = useState<Record<string, Entry[]>>({});
   const [open, setOpen] = useState<Set<string>>(new Set(['']));
-  const load = (p: string) => api<{ entries: Entry[] }>(`/api/files?path=${q(p)}`).then((r) => setKids((k) => ({ ...k, [p]: r.entries.filter((e) => e.type === 'dir').map((e) => e.name).sort((a, b) => a.localeCompare(b)) })), () => {});
+  const load = (p: string) => api<{ entries: Entry[] }>(`/api/files?path=${q(p)}`).then((r) => setKids((k) => ({ ...k, [p]: r.entries.filter((e) => e.type === 'dir').sort((a, b) => a.name.localeCompare(b.name)) })), () => {});
   useEffect(() => { open.forEach(load); }, [version]);
   useEffect(() => { // keep the current folder's ancestors open
     const parts = dir ? dir.split('/') : [];
@@ -23,15 +25,15 @@ function Tree({ dir, go, version }: { dir: string; go: (d: string) => void; vers
     if (need.length) { setOpen(new Set([...open, ...need])); need.forEach(load); }
   }, [dir]);
   const toggle = (p: string) => { const n = new Set(open); if (n.has(p)) n.delete(p); else { n.add(p); load(p); } setOpen(n); };
-  const Node = ({ path, name, depth }: { path: string; name: string; depth: number }) => (
+  const Node = ({ path, name, depth, addon }: { path: string; name: string; depth: number; addon?: boolean }) => (
     <li>
       <div className={`${navRow(dir === path)} gap-1 py-0`} style={{ paddingLeft: `${depth * 14 + 6}px` }}>
         <button type="button" aria-expanded={open.has(path)} aria-label={`${open.has(path) ? 'Collapse' : 'Expand'} ${name}`} className="grid size-6 shrink-0 place-items-center rounded text-muted hover:bg-foreground/10" onClick={() => toggle(path)}>
           <ChevronRight size={14} aria-hidden className={`transition-transform ${open.has(path) ? 'rotate-90' : ''}`} /></button>
         <button type="button" aria-current={dir === path ? 'page' : undefined} className="flex min-w-0 grow items-center gap-2 py-1 text-left" onClick={() => go(path)}>
-          {depth ? <Folder size={15} aria-hidden className="shrink-0" /> : <HardDrive size={15} aria-hidden className="shrink-0" />}<span className="truncate">{name}</span></button>
+          {addon ? <Cable size={15} aria-hidden className="shrink-0 text-seal" /> : depth ? <Folder size={15} aria-hidden className="shrink-0" /> : <HardDrive size={15} aria-hidden className="shrink-0" />}<span className="truncate">{name}</span></button>
       </div>
-      {open.has(path) && !!kids[path]?.length && <ul>{kids[path].map((k) => <Node key={k} path={join(path, k)} name={k} depth={depth + 1} />)}</ul>}
+      {open.has(path) && !!kids[path]?.length && <ul>{kids[path].map((k) => <Node key={k.name} path={join(path, k.name)} name={k.name} depth={depth + 1} addon={!!k.addon} />)}</ul>}
     </li>
   );
   return <nav aria-label="Folders"><ul><Node path="" name="My files" depth={0} /></ul></nav>;
@@ -40,6 +42,7 @@ function Tree({ dir, go, version }: { dir: string; go: (d: string) => void; vers
 export default function Files() {
   const [dir, setDir] = useState(hashDir()); // relative to /files, kept in the URL hash
   const [entries, setEntries] = useState<Entry[]>();
+  const [addon, setAddon] = useState<AddonRef>(); // set while the current folder is inside a storage add-on
   const [quota, setQuota] = useState<Quota>();
   const [err, setErr] = useState('');
   const [starting, setStarting] = useState(false); // 503 / timeout: the user's workspace container may still be booting
@@ -54,7 +57,7 @@ export default function Files() {
   const load = () => {
     setStarting(false);
     setVersion((v) => v + 1);
-    api<{ entries: Entry[] }>(`/api/files?path=${q(dir)}`).then((r) => { setEntries(r.entries.sort((a, b) => Number(b.type === 'dir') - Number(a.type === 'dir') || a.name.localeCompare(b.name))); setErr(''); })
+    api<{ entries: Entry[]; addon?: AddonRef | null }>(`/api/files?path=${q(dir)}`).then((r) => { setAddon(r.addon ?? undefined); setEntries(r.entries.sort((a, b) => Number(b.type === 'dir') - Number(a.type === 'dir') || a.name.localeCompare(b.name))); setErr(''); })
       .catch((e) => { setEntries([]); if (e.status === 503 || e.status === 504 || e.status === 408 || e instanceof TypeError) setStarting(true); else setErr(e.message); });
     api<Quota>('/api/files/usage').then(setQuota).catch(() => {});
   };
@@ -84,7 +87,7 @@ export default function Files() {
       {() => (
         <div className="flex min-h-0 grow">{tree}<div className="relative min-w-0 grow overflow-y-auto" onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setDrag(true); } }}
           onDragLeave={(e) => e.currentTarget === e.target && setDrag(false)} onDrop={(e) => { e.preventDefault(); setDrag(false); send([...e.dataTransfer.files]); }}>
-          <Page title={crumbs.at(-1) ?? 'My files'} hint="Your saved files. Agents see this folder as /files and can read and write here."
+          <Page title={crumbs.at(-1) ?? 'My files'} hint={addon ? `Stored on ${addon.name} (${SOURCE[addon.kind]}), not in hefyn, and not counted against your storage. Agents see it as /files/${addon.name}.` : 'Your saved files. Agents see this folder as /files and can read and write here. Connected storage shows up as folders; add it in Connectors.'}
             actions={<div className="flex gap-2">
               <button className={buttonGhost} onClick={() => setMk(true)}><FolderPlus size={16} aria-hidden />New folder</button>
               <button className={buttonPrimary} onClick={() => pick.current?.click()}><Upload size={16} aria-hidden />Upload</button>
@@ -113,14 +116,14 @@ export default function Files() {
                         <Input name="name" aria-label={`New name for ${en.name}`} defaultValue={en.name} required autoFocus className="max-w-xs py-1" onKeyDown={(e) => e.key === 'Escape' && setRename(undefined)} />
                         <button className={buttonPrimary}>Save</button></form>
                       : en.type === 'dir'
-                        ? <button className="inline-flex items-center gap-2 hover:underline" onClick={() => go(join(dir, en.name))}><Folder size={16} aria-hidden className="text-foreground" />{en.name}</button>
+                        ? <button className="inline-flex items-center gap-2 hover:underline" onClick={() => go(join(dir, en.name))}>{en.addon ? <Cable size={16} aria-hidden className="text-seal" /> : <Folder size={16} aria-hidden className="text-foreground" />}{en.name}{en.addon && <Chip tone="seal">{SOURCE[en.addon.kind]}</Chip>}</button>
                         : <span className="inline-flex items-center gap-2"><FileIcon size={16} aria-hidden className="text-muted" />{en.name}</span>}</td>
                     <td className="tnum text-right text-muted">{en.type === 'file' ? bytes(en.size) : ''}</td>
-                    <td className="tnum whitespace-nowrap text-muted">{new Date(en.mtime).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                    <td className="tnum whitespace-nowrap text-muted">{en.mtime && !en.addon ? new Date(en.mtime).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</td>
                     <td className="w-1 whitespace-nowrap"><div className="flex justify-end gap-0.5">
                       {en.type === 'file' && <a className="grid size-9 place-items-center rounded-lg text-muted hover:bg-foreground/5 hover:text-foreground" aria-label={`Download ${en.name}`} title="Download" href={`/api/files/download?path=${q(join(dir, en.name))}`}><Download size={15} /></a>}
-                      <button className="grid size-9 place-items-center rounded-lg text-muted hover:bg-foreground/5 hover:text-foreground" aria-label={`Rename ${en.name}`} title="Rename" onClick={() => setRename(en.name)}><Pencil size={15} /></button>
-                      <button className="grid size-9 place-items-center rounded-lg text-muted hover:bg-danger/10 hover:text-danger-ink" aria-label={`Delete ${en.name}`} title="Delete" onClick={() => setDel(en)}><Trash2 size={15} /></button></div></td>
+                      {!en.addon && <button className="grid size-9 place-items-center rounded-lg text-muted hover:bg-foreground/5 hover:text-foreground" aria-label={`Rename ${en.name}`} title="Rename" onClick={() => setRename(en.name)}><Pencil size={15} /></button>}
+                      {!en.addon && <button className="grid size-9 place-items-center rounded-lg text-muted hover:bg-danger/10 hover:text-danger-ink" aria-label={`Delete ${en.name}`} title="Delete" onClick={() => setDel(en)}><Trash2 size={15} /></button>}</div></td>
                   </tr>
                 ))}
               </Table>

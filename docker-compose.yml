@@ -8,7 +8,11 @@ name: hefyn
 #   hefyn-mcp  internet, fixed name: egress and the Playwright containers the runner starts
 # The agent sits on `core` only. Its sole way out is the egress proxy (HTTPS_PROXY), which allows connected providers only.
 x-app: &app
-  build: .
+  build:
+    context: .
+    args: # bake the GLiNER model into the image: HEFYN_GLINER_BAKE=1 in .env or docker compose build --build-arg HEFYN_GLINER_BAKE=1
+      HEFYN_GLINER_BAKE: ${HEFYN_GLINER_BAKE:-0}
+      HEFYN_GLINER_BASE_URL: ${HEFYN_GLINER_BASE_URL:-}
   image: hefyn-app
   volumes: [hefyn-data:/data]
   restart: unless-stopped
@@ -27,6 +31,9 @@ services:
       HEFYN_AGENT_URL: http://agent:3000
       HEFYN_REDACT_URL: http://redact:8787 # hub content screening, privacy status
       HEFYN_REDACT_GLINER: ${HEFYN_REDACT_GLINER:-on} # web downloads the GLiNER model files into the redact-models volume (redact and agent have no internet)
+      HEFYN_GLINER_SOURCE: ${HEFYN_GLINER_SOURCE:-} # huggingface (default) | mirror | image | local; image is the default for an image built with HEFYN_GLINER_BAKE=1
+      HEFYN_GLINER_BASE_URL: ${HEFYN_GLINER_BASE_URL:-}
+      HEFYN_GLINER_DIR: ${HEFYN_GLINER_DIR:-}
       HEFYN_RUNNER_URL: http://runner:8790 # Files API for users with sandbox.shell goes through their container
       HEFYN_ALLOW_NO_GLINER: ${HEFYN_ALLOW_NO_GLINER:-}
       HEFYN_TRUSTED_PROXIES: ${HEFYN_TRUSTED_PROXIES:-} # reverse proxy IPs/CIDRs whose X-Forwarded-For is believed
@@ -68,6 +75,8 @@ services:
       <<: *env
       PORT: "8787"
       HEFYN_REDACT_GLINER: ${HEFYN_REDACT_GLINER:-on}
+      HEFYN_GLINER_SOURCE: ${HEFYN_GLINER_SOURCE:-}
+      HEFYN_GLINER_DIR: ${HEFYN_GLINER_DIR:-}
       HEFYN_REDACT_REQUEST_TIMEOUT_MS: ${HEFYN_REDACT_REQUEST_TIMEOUT_MS:-120000}
     volumes: [redact-models:/data/models:ro]
     networks: [core]

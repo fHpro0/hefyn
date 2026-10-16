@@ -57,6 +57,9 @@ admins approve what the whole team sees.
 **Files and a sandbox.** Each person has their own storage that agents can read and write. People with
 permission get a real shell in an isolated container, and a managed browser (Playwright) for web tasks.
 
+**Storage add-ons.** Connect Nextcloud, ownCloud or a NAS (WebDAV) or an MCP file server: it shows up as a folder in
+Files and agents read and write it with their file tools. No cloud SDKs; credentials stay per user.
+
 **Built for a company.** Roles with fine-grained permissions (Admin and Worker built in, your own on top),
 usage and cost per person and model, an audit trail, and everything runs on your own server.
 
@@ -86,6 +89,18 @@ Open http://localhost:3000/setup. The first account becomes the Admin and is ask
 
 Running it for real (reverse proxy, sandbox firewall rules, backups, development setup):
 **[docs/SELF-HOSTING.md](docs/SELF-HOSTING.md)**.
+
+## Getting the GLiNER model
+
+The local GLiNER model (about 86 MB, Apache-2.0) is checked against pinned SHA-256 hashes however it arrives. Pick
+where it comes from with `HEFYN_GLINER_SOURCE`:
+
+- `huggingface` (default): hefyn downloads it from Hugging Face on first start.
+- `mirror`: it downloads from your own https server (`HEFYN_GLINER_BASE_URL`), so nothing touches Hugging Face.
+- `image`: bake it into the Docker image at build time (`docker compose build --build-arg HEFYN_GLINER_BAKE=1`), no download at runtime.
+- `local`: no network at all. Put the files in `HEFYN_GLINER_DIR`, or upload them in the app (Models, Privacy).
+
+Details, mirror setup and the licence: [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md#getting-the-gliner-model).
 
 ## How it fits together
 
