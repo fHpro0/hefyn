@@ -18,7 +18,7 @@ let stopping = false;
 const APORT = PORT + 1200;
 const TOKEN = 'test-internal-token-test-internal-token-1234'; // production validation wants 32+ characters
 const agentUrl = `http://127.0.0.1:${APORT}`;
-let redact: ChildProcess; // the real hefyn-redact sidecar (cargo build), regex + entropy only (GLiNER off)
+let redact: ChildProcess; // the real redact service (dist/redact-server.mjs), regex + entropy only (GLiNER off)
 const RPORT = PORT + 600;
 let fake: Awaited<ReturnType<typeof startFake>>;
 let mcp: Awaited<ReturnType<typeof startFakeMcp>>;
@@ -46,8 +46,8 @@ const anon = new Client();
 before(async () => {
   fake = await startFake();
   mcp = await startFakeMcp();
-  redact = spawn('services/redact/target/debug/hefyn-redact-service', [], { env: { ...process.env, HEFYN_REDACT_GLINER: 'off', HEFYN_REDACT_ADDR: `127.0.0.1:${RPORT}` }, stdio: 'inherit' });
-  for (let i = 0; i < 50 && !(await fetch(`http://127.0.0.1:${RPORT}/health`).then((r) => r.ok, () => false)); i++) await new Promise((r) => setTimeout(r, 100));
+  redact = spawn('node', ['dist/redact-server.mjs'], { env: { ...process.env, HEFYN_REDACT_GLINER: 'off', PORT: String(RPORT), HEFYN_REDACT_HOST: '127.0.0.1', HEFYN_INTERNAL_TOKEN: TOKEN }, stdio: 'inherit' });
+  for (let i = 0; i < 50 && !(await fetch(`http://127.0.0.1:${RPORT}/live`, { headers: { 'x-hefyn-internal': TOKEN } }).then((r) => r.ok, () => false)); i++) await new Promise((r) => setTimeout(r, 100));
   dataDir = mkdtempSync(join(tmpdir(), 'hefyn-e2e-'));
   const env = { ...process.env, HEFYN_URL: base, NODE_ENV: 'production', HEFYN_SECRET: 'test-secret-test-secret-test-secret-1234', HEFYN_DATA_DIR: dataDir, HEFYN_INTERNAL_TOKEN: TOKEN, HEFYN_ALLOW_PRIVATE_URLS: '1', HEFYN_ALLOW_NO_GLINER: '1', HEFYN_REDACT_URL: `http://127.0.0.1:${RPORT}` }; // fake upstreams listen on 127.0.0.1
   const spawnAgent = () => {
@@ -489,6 +489,23 @@ test('restart queue: a forced restart (drain timeout) resumes the interrupted ta
   const h = await settle(url, 400); // Flue reclaims an interrupted submission once its 30 s lease expires
   assert.equal(h.settlements[0].outcome, 'completed', JSON.stringify(h.settlements));
   assert.ok(requests.length - from >= 2, 'the interrupted call was made again after the restart');
+});
+
+test('the redact service stays warm when the agent restarts (same process), and the first request after the restart is redacted', async () => {
+  const health = () => fetch(`http://127.0.0.1:${RPORT}/health`, { headers: { 'x-hefyn-internal': TOKEN } }).then((r) => r.json());
+  const before = await health();
+  agent.kill();
+  await new Promise((r) => setTimeout(r, 500));
+  await agentReady();
+  const after = await health();
+  assert.equal(after.pid, before.pid);
+  assert.equal(after.startedAt, before.startedAt);
+  const { id } = (await admin.req('/api/conversations', 'POST', { title: 'warm' })).json;
+  const url = `/agents/configurable/${id}`;
+  const from = requests.length;
+  assert.equal((await admin.req(url, 'POST', { kind: 'user', body: `Mail ${EMAIL}` })).status, 202);
+  await settle(url);
+  assert.ok(requests.length > from && requests.slice(from).every((r) => !r.raw.includes(EMAIL)));
 });
 
 test('privacy: sidecar down fails closed, nothing reaches the upstream', async () => {

@@ -4,7 +4,7 @@ name: hefyn
 #
 # Network layout (privacy: no model request can leave except through the redaction gate and the egress proxy):
 #   core       internal-only (no route out): web, agent, redact, runner, egress talk here
-#   public     internet: web (GitHub imports), redact (model download), egress
+#   public     internet: web (GitHub imports, GLiNER model download), egress
 #   hefyn-mcp  internet, fixed name: egress and the Playwright containers the runner starts
 # The agent sits on `core` only. Its sole way out is the egress proxy (HTTPS_PROXY), which allows connected providers only.
 x-app: &app
@@ -26,13 +26,14 @@ services:
       HEFYN_URL: ${HEFYN_URL:-http://localhost:3000}
       HEFYN_AGENT_URL: http://agent:3000
       HEFYN_REDACT_URL: http://redact:8787 # hub content screening, privacy status
+      HEFYN_REDACT_GLINER: ${HEFYN_REDACT_GLINER:-on} # web downloads the GLiNER model files into the redact-models volume (redact and agent have no internet)
       HEFYN_RUNNER_URL: http://runner:8790 # Files API for users with sandbox.shell goes through their container
       HEFYN_ALLOW_NO_GLINER: ${HEFYN_ALLOW_NO_GLINER:-}
       HEFYN_TRUSTED_PROXIES: ${HEFYN_TRUSTED_PROXIES:-} # reverse proxy IPs/CIDRs whose X-Forwarded-For is believed
+    volumes: [hefyn-data:/data, redact-models:/data/models] # web is the only writer of the model files
     networks: [core, public]
     depends_on:
       agent: { condition: service_healthy }
-      redact: { condition: service_healthy }
   agent:
     <<: *app
     environment:
@@ -57,15 +58,27 @@ services:
       timeout: 4s
       retries: 12
       start_period: 40s
-  # Never published. The GLiNER model downloads into the volume on first start; the service is healthy only when GLiNER is loaded.
-  # GLiNER is mandatory in production: HEFYN_REDACT_GLINER=off needs HEFYN_ALLOW_NO_GLINER=1 (dev/test) or the agent refuses to start.
+  # The redaction engine (regex, entropy, GLiNER) as its own service: stays warm when agent/web restart, own CPU/memory limits. Internal
+  # network only, no internet at all (it sees the plain text): web downloads the model files into the redact-models volume, mounted read-only here.
+  # Healthy = process up (/live); /health says whether GLiNER is loaded. GLiNER is mandatory in production: HEFYN_REDACT_GLINER=off needs HEFYN_ALLOW_NO_GLINER=1.
   redact:
-    build: ./services/redact
+    <<: *app
+    command: ["node", "dist/redact-server.mjs"]
     environment:
+      <<: *env
+      PORT: "8787"
       HEFYN_REDACT_GLINER: ${HEFYN_REDACT_GLINER:-on}
-    volumes: [redact-models:/data/models]
-    networks: [core, public]
-    restart: unless-stopped
+      HEFYN_REDACT_REQUEST_TIMEOUT_MS: ${HEFYN_REDACT_REQUEST_TIMEOUT_MS:-120000}
+    volumes: [redact-models:/data/models:ro]
+    networks: [core]
+    cpus: ${HEFYN_REDACT_CPUS:-2}
+    mem_limit: ${HEFYN_REDACT_MEMORY:-1536m}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8787/live',{headers:{'x-hefyn-internal':process.env.HEFYN_INTERNAL_TOKEN}}).then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 10s
+      timeout: 4s
+      retries: 6
+      start_period: 10s
   # Forward proxy with a host allowlist (derived from app.db by web). Requires the internal token as Proxy-Authorization.
   egress:
     build: ./services/egress

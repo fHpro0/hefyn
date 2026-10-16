@@ -1,9 +1,14 @@
 ---
-import '@fontsource-variable/schibsted-grotesk';
-import '@fontsource-variable/jetbrains-mono';
+import '@fontsource/ibm-plex-sans/400.css';
+import '@fontsource/ibm-plex-sans/500.css';
+import '@fontsource/ibm-plex-sans/600.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
 import '../styles/app.css';
 
 const { title = 'hefyn' } = Astro.props;
+// Sets .dark before first paint: stored choice (light | dark) or the system setting, which is followed live.
+const theme = `(function(){var m=matchMedia('(prefers-color-scheme: dark)');function a(){var t=localStorage.getItem('hefyn-theme')||'system';document.documentElement.classList.toggle('dark',t==='dark'||(t==='system'&&m.matches))}a();m.addEventListener('change',a);addEventListener('hefyn-theme',a)})()`;
 ---
 <!doctype html>
 <html lang="en">
@@ -11,8 +16,10 @@ const { title = 'hefyn' } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <link rel="icon" href="/brand/hefyn-mark.svg" />
+    <link rel="icon" href="/brand/hefyn-favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/brand/hefyn-favicon-32.png" sizes="32x32" type="image/png" />
     <title>{title} · hefyn</title>
+    <script is:inline set:html={theme}></script>
   </head>
   <body class="min-h-dvh">
     <slot />

@@ -1,18 +1,12 @@
-import { PackageCheck, Store, TriangleAlert } from 'lucide-react';
+import { PackageCheck, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { api, useLoad } from './api';
 import { FileBrowser, KIND, KindIcon, type Detail, type Pkg } from './Hub';
-import Shell, { paneRow } from './Shell';
+import Shell from './Shell';
 import { buttonDanger, buttonGhost, buttonPrimary, Chip, Dialog, Empty, Err, Field, Page, Textarea, toast } from './ui';
 
 export default function HubReview() {
-  const pane = (
-    <nav aria-label="Hub sections" className="grid gap-0.5">
-      <a href="/hub" className={paneRow(false)}><Store size={16} aria-hidden />Back to the hub</a>
-      <a href="/hub/review" aria-current="page" className={paneRow(true)}><PackageCheck size={16} aria-hidden />Review</a>
-    </nav>
-  );
-  return <Shell pane={pane}>{() => <Content />}</Shell>;
+  return <Shell title="Hub review">{() => <Content />}</Shell>;
 }
 
 function Content() {
@@ -42,23 +36,23 @@ function Item({ pkg, onApprove, onReject }: { pkg: Pkg; onApprove: () => void; o
   const [show, setShow] = useState(false);
   const d = useLoad<Detail>(`/api/hub/packages/${pkg.id}`, [show]);
   return (
-    <li className="rounded-2xl bg-sheet p-5">
+    <li className="rounded-xl bg-raised p-5">
       <div className="flex flex-wrap items-start gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-ink/[0.06] text-soft"><KindIcon kind={pkg.kind} /></span>
+        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-foreground/[0.06] text-muted"><KindIcon kind={pkg.kind} /></span>
         <div className="min-w-0 grow"><div className="flex flex-wrap items-center gap-2"><h2 className="font-medium">{pkg.name}</h2><Chip>{KIND[pkg.kind].label}</Chip></div>
-          <p className="mt-0.5 text-sm text-soft">Version {pkg.version}, by {pkg.owner.name}</p></div>
+          <p className="mt-0.5 text-sm text-muted">Version {pkg.version}, by {pkg.owner.name}</p></div>
         <div className="flex gap-2"><button className={buttonDanger} onClick={onReject}>Reject</button><button className={buttonPrimary} onClick={onApprove}>Approve</button></div>
       </div>
-      <p className="mt-3 text-[15px] leading-6">{pkg.description}</p>
+      <p className="mt-3 text-sm leading-[22px]">{pkg.description}</p>
       {pkg.guard.flagged && (
-        <div role="alert" className="mt-3 rounded-[10px] bg-caution/15 px-3.5 py-2.5 text-sm">
-          <b className="flex items-center gap-1.5 text-caution-ink"><TriangleAlert size={15} aria-hidden />The prompt-injection guard flagged this package</b>
+        <div role="alert" className="mt-3 rounded-lg bg-warning/15 px-3.5 py-2.5 text-sm">
+          <b className="flex items-center gap-1.5 text-warning-ink"><TriangleAlert size={15} aria-hidden />The prompt-injection guard flagged this package</b>
           <ul className="mt-1 list-disc pl-5">{pkg.guard.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
         </div>
       )}
-      {pkg.contains && <p className="mt-3 text-sm text-soft">Contains {pkg.contains.skills.length} skills, {pkg.contains.agents.length} agents and {pkg.contains.mcp.length} MCP servers.</p>}
-      <button className="mt-3 text-sm text-hefyn hover:underline" aria-expanded={show} onClick={() => setShow(!show)}>{show ? 'Hide files' : 'Show files'}</button>
-      {show && <div className="mt-2">{d.data ? <FileBrowser id={pkg.id} files={d.data.files} /> : <p className="text-sm text-soft">Loading…</p>}</div>}
+      {pkg.contains && <p className="mt-3 text-sm text-muted">Contains {pkg.contains.skills.length} skills, {pkg.contains.agents.length} agents and {pkg.contains.mcp.length} MCP servers.</p>}
+      <button className="mt-3 text-sm text-foreground hover:underline" aria-expanded={show} onClick={() => setShow(!show)}>{show ? 'Hide files' : 'Show files'}</button>
+      {show && <div className="mt-2">{d.data ? <FileBrowser id={pkg.id} files={d.data.files} /> : <p className="text-sm text-muted">Loading…</p>}</div>}
     </li>
   );
 }

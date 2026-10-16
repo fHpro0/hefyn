@@ -17,7 +17,7 @@ function Content({ rt, admin }: { rt?: Runtime; admin: boolean }) {
   const providers = useLoad<ProviderList>('/api/models/providers');
   const models = useLoad<Connected[]>('/api/models');
   const profile = useLoad<Profile>('/api/profile');
-  const [connect, setConnect] = useState<string>(); // undefined = closed, '' = pick a provider, id = sign in again
+  const [connect, setConnect] = useState<string | undefined>(location.hash === '#connect' ? '' : undefined); // undefined = closed, '' = pick a provider, id = sign in again
   const [err, setErr] = useState('');
   const [pick, setPick] = useState<{ model?: string; agents: Record<string, string> }>({ agents: {} });
   const [restart, setRestart] = useState(false);
@@ -42,14 +42,14 @@ function Content({ rt, admin }: { rt?: Runtime; admin: boolean }) {
         ) : (
           <>
             {conns.map((c) => (
-              <div key={c.id} className="flex items-center gap-4 border-b border-line py-4">
+              <div key={c.id} className="flex items-center gap-4 border-b border-border py-4">
                 <div className="min-w-0 grow">
                   <div className="flex flex-wrap items-center gap-2"><span className="text-sm font-medium">{c.name}</span>
                     <Chip tone={c.status === 'ok' ? 'ok' : 'alarm'}>{c.status === 'ok' ? 'Working' : c.status === 'expired' ? 'Sign-in expired' : 'Needs attention'}</Chip></div>
-                  <p className="mt-0.5 text-sm text-soft">{c.kind === 'oauth' ? 'Signed in with an account' : 'Connected with an API key'}</p>
+                  <p className="mt-0.5 text-sm text-muted">{c.kind === 'oauth' ? 'Signed in with an account' : 'Connected with an API key'}</p>
                 </div>
                 {c.kind === 'oauth' && c.status !== 'ok' && <button className={buttonGhost} onClick={() => setConnect(c.id)}><LogIn size={14} aria-hidden />Sign in again</button>}
-                <button className="rounded-[10px] p-2 text-soft hover:bg-alarm/10 hover:text-alarm-ink" aria-label={`Remove ${c.name}`} onClick={async () => { await api(`/api/models/providers/${c.id}`, 'DELETE'); toast(`Removed ${c.name}`); reloadAll(); }}><Trash2 size={15} /></button>
+                <button className="rounded-lg p-2 text-muted hover:bg-danger/10 hover:text-danger-ink" aria-label={`Remove ${c.name}`} onClick={async () => { await api(`/api/models/providers/${c.id}`, 'DELETE'); toast(`Removed ${c.name}`); reloadAll(); }}><Trash2 size={15} /></button>
               </div>
             ))}
             <div className="py-4"><button className={buttonGhost} onClick={() => setConnect('')}><Plus size={15} aria-hidden />Connect a model</button></div>
@@ -58,7 +58,7 @@ function Content({ rt, admin }: { rt?: Runtime; admin: boolean }) {
       </Section>
 
       <Section title="Default models">
-        {!all.length ? <Row title="Orchestrator" hint="The model that plans the work and writes the answer."><p className="text-sm text-soft">Connect a provider first.</p></Row> : (
+        {!all.length ? <Row title="Orchestrator" hint="The model that plans the work and writes the answer."><p className="text-sm text-muted">Connect a provider first.</p></Row> : (
           <form onSubmit={async (e) => {
             e.preventDefault(); setErr('');
             try { await api('/api/profile', 'PUT', { model, agents: Object.fromEntries((profile.data?.agents ?? []).map((a) => [a.name, pick.agents[a.name] ?? a.model ?? null])) }); toast('Saved'); profile.reload(); }
@@ -72,7 +72,7 @@ function Content({ rt, admin }: { rt?: Runtime; admin: boolean }) {
                 <Select aria-label={`Model for ${a.name}`} value={pick.agents[a.name] ?? a.model ?? ''} onChange={(e) => setPick({ ...pick, agents: { ...pick.agents, [a.name]: e.target.value } })}><option value="">Same as orchestrator</option>{options}</Select>
               </Row>
             ))}
-            <div className="grid gap-3 py-5"><Err>{err}</Err><div className="flex items-center gap-4"><button className={buttonPrimary}>Save</button>{profile.data?.model && <a className="text-sm text-hefyn hover:underline" href="/settings/users">Next: add your team</a>}</div></div>
+            <div className="grid gap-3 py-5"><Err>{err}</Err><div className="flex items-center gap-4"><button className={buttonPrimary}>Save</button>{profile.data?.model && <a className="text-sm text-foreground underline underline-offset-2" href="/settings/users">Next: add your team</a>}</div></div>
           </form>
         )}
       </Section>

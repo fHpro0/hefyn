@@ -8,19 +8,15 @@ Status: **v1 built and verified 2026-10-15** (phases 1–4; 60/60 tests, Docker 
 (orchestrator + roles, skills, MCP, many models) behind one login, with a hub to
 install and share skills, roles and connectors in one click. GDPR (DSGVO) compliant.
 
-It is the web/team successor of the native hefyn terminal (github.com/fHpro0/warden) and keeps
-its promise: **agents work with your data without seeing your secrets.**
+It shares its promise with the native terminal [warden](https://github.com/fHpro0/warden) — **agents work
+with your data without seeing your secrets** — and uses a TypeScript port of warden's redaction engine, but
+has its own identity.
 
-## Brand (from the native hefyn)
+## Brand
 
-- Logo: `assets/brand/` (mark, wordmark, white variants, app icon).
-- Themes: `assets/themes/hefyn-light.json`, `hefyn-dark.json` → CSS variables
-  (primary `#2563eb`, dark background `#0b1220`, sidebar `#0f172a`).
-- Status colours: running `#2563eb`, success `#15803d`/`#4ade80`, failure `#b91c1c`/`#f87171`,
-  agent `#7c3aed`/`#a78bfa` (agent badges and redaction pills).
-- Code/monospace: JetBrains Mono.
-- Layout language: session tree on the left with coloured groups, tabs, cards for edits and
-  tool calls, "Sent to <model>" panel showing exactly what left the server and what was redacted.
+hefyn's own identity (no colours or assets from warden): monochrome zinc neutrals, one brand colour
+(seal violet), IBM Plex Sans/Mono, and a redaction-bar mark in `assets/brand/`. Full tokens, layout and
+principles: [UI-DESIGN.md](UI-DESIGN.md).
 
 ## Decided
 
@@ -35,7 +31,7 @@ its promise: **agents work with your data without seeing your secrets.**
 | Agents | One generic `Configurable` Flue agent, built at runtime from DB profiles |
 | Models | **Every pi-ai provider**: API keys (OpenRouter, Zen, Anthropic, OpenAI, …), subscription logins (ChatGPT/Codex, Claude, Copilot, …) and custom OpenAI-compatible endpoints. Each user connects their own; admins can add company-wide ones |
 | Privacy | **All model traffic goes through the privacy gateway** — that is the GDPR mitigation, not a provider allowlist |
-| Redaction engine | Reuse `warden-redact` (formerly `hefyn-redact`; Rust crate from the native app, pinned rev fe15b9f: regex + entropy + local GLiNER via `gline-rs`, fail-closed, `{{var:NAME}}` / `{{secret:NAME}}` placeholders, prompt-injection `Guard`) as a small HTTP sidecar — no new Python GLiNER service |
+| Redaction engine | **TypeScript port of warden's redaction engine** (`src/server/redact/`; ported from the Rust crate `warden-redact` at rev fe15b9f and verified against it, see `test/redact-parity.test.ts`): regex rules, entropy, local GLiNER (`gliner-pii-small`, quantized ONNX via `onnxruntime-node`, inference in a `worker_thread`), span merging, fail-closed, `{{var:NAME}}` placeholders, prompt-injection heuristics. Runs as its own **`redact` service** (`src/redact-server.ts`, same image, internal network, internal token, CPU/memory limits) — no Python, no Rust. Agent and web call it over HTTP (`POST /redact`, `POST /guard`, `GET /health`) and fail closed on any error, timeout or non-2xx. It has no internet: `web` downloads the model files into a `redact-models` volume (mounted read-only into `redact`), SHA-256 verified, which keeps the one component that sees plain text offline and needs no egress rule for Hugging Face. The model stays loaded across agent restarts; the agent no longer waits for it (the gate checks readiness per request) |
 | Processes | Two services: **`web`** (auth, API, UI, hub — always up, proxies `/agents/*`) and **`agent`** (Flue runtime only, internal network). Agent restarts via a **restart queue**: `running → draining` (new tasks blocked, running ones finish) `→ restarting → running`; triggered by admin, provider removal or code changes |
 | Storage | **Per-user storage**: `files/` (persistent: uploads, results) + `tmp/<conversation>/` (scratch, auto-cleaned). Agents use it via a scoped Flue sandbox (file tools, no shell until the container sandbox); Files page + chat attachments; quota per user; deleted with the user |
 | Plugins | Skills + roles + MCP servers + custom model providers. **No user-uploaded server code** |
@@ -66,11 +62,11 @@ Hono app (Node, Docker) ──────────────────�
   ├─ /agents/configurable/:convId   Flue router (owner check first)   │
   │      └─ Configurable agent: loads profile → useModel / useSubagent │
   │         / useSkill / useMcpConnection                              │
-  ├─ model gateway (phase 4): GLiNER redaction + per-user credentials  │
+  ├─ model gateway (phase 4): GLiNER redaction (redact service) + per-user credentials │
   └─ MCP runner: starts/stops managed MCP containers via Docker API ───┘
         │
         ├─ SQLite (app DB + Flue store; conversation ids = u_<userId>_<chat>)
-        ├─ hefyn-redact sidecar (Rust, CPU, GLiNER ONNX) [phase 2]
+        ├─ redact service (TypeScript; GLiNER ONNX in a worker thread, CPU) [phase 2]
         ├─ managed MCP containers, e.g. Playwright + Chrome   [phase 3]
         └─ code sandbox (self-hosted, e.g. Daytona)      [phase 3, open]
 ```
@@ -98,7 +94,7 @@ profile". A managed MCP asks only for its settings (form generated from its
 schema); the runner starts the container.
 
 **Trust:** skills are prompt-injection surface, MCP servers run code. Imports land
-as `pending`, are pre-checked by `hefyn-redact`'s `Guard`, and an admin approves before `team` visibility. Pin by version + content
+as `pending`, are pre-checked by the redaction engine's `guard`, and an admin approves before `team` visibility. Pin by version + content
 hash; updates need re-approval. Each package shows what it can reach.
 
 **Managed MCP example — Playwright:** container
@@ -144,7 +140,7 @@ Sharing = `visibility` + "fork" (copy row, new owner).
    **Roles:** Admin + Worker seeded, role editor (permission checkboxes), `requirePermission()` on every API route.
 2. **Model gateway** — "Connect a model" page (API key, subscription login, custom
    endpoint), per-user encrypted credentials, usage per user. Every request goes
-   through the `hefyn-redact` sidecar, same rules as native hefyn:
+   through the redact service, same rules as native hefyn:
    - outgoing text is redacted; **if any detector fails, nothing is sent**;
    - values become `{{var:EMAIL_1}}`-style placeholders kept per conversation;
    - placeholders in the model's tool-call arguments are swapped back to real values
@@ -181,9 +177,18 @@ Sharing = `visibility` + "fork" (copy row, new owner).
 - Container per user session for MCP needs limits (CPU, memory, idle kill).
 - Hub content from public sources is untrusted — review step is mandatory.
 - GLiNER misses entities; redaction is best effort, pseudonymized data is still personal data.
-- `hefyn-redact` was built for terminal output; chat prose and streamed model replies may need
-  tuning (thresholds, labels for German text). Native hefyn is still changing — pin a commit
-  when the sidecar depends on it.
+- The engine was built for terminal output; chat prose and streamed model replies may need
+  tuning (thresholds, labels for German text). It is a port of warden at a pinned rev; changes in warden
+  are not picked up automatically.
+- The quantized GLiNER model is sensitive to the ONNX Runtime version (scores shift by ~1 %, borderline entities flip):
+  `onnxruntime-node` is pinned to 1.20.1, the version the Rust original ran on. Re-run `test/redact-parity.test.ts` before bumping it.
+- Regexes run on the JS engine (backtracking) instead of Rust's linear-time one. Defence in depth: (1) regex, entropy and the guard run in a
+  worker-thread pool (`HEFYN_REDACT_WORKERS`, default 2), never on the main thread; a job that exceeds `HEFYN_REDACT_TIMEOUT_MS` (default 10 s)
+  fails closed ("redaction timed out", the request is blocked), its worker is killed and replaced and other requests continue; (2) the rules
+  that were quadratic on long runs are bounded or guarded by a required literal (email local part <= 64, labels <= 63, URL scheme <= 31,
+  key name after a keyword <= 256, JWT segments <= 8192, hash <= 1024), so 1 MB worst-case inputs take ~0.2 s. Cost: values beyond those
+  bounds (an email local part over 64 characters, a 300-character variable name before `=`) are no longer matched as Rust would. A new rule
+  with nested quantifiers could still be slow, which the timeout then contains. The GLiNER worker has its own timeout (`HEFYN_REDACT_GLINER_TIMEOUT_MS`, 60 s).
 - Subscription logins: pi-ai's OAuth flows are built for a local CLI (callback /
   device code); a web flow needs adapting. Providers may block or rate-limit
   subscription tokens used outside their own apps (Anthropic has done so).
@@ -196,6 +201,6 @@ Sharing = `visibility` + "fork" (copy row, new owner).
 ## Privacy enforcement (v1)
 
 Layers, outermost first: (network) the agent container has no route out except the egress proxy with a derived allowlist; (fetch guard) model-API hosts are only reachable under the
-gate's stamp; (gate) the pi-ai `Models` class itself redacts every chat request with GLiNER via the hefyn-redact sidecar, fail closed; (policy) GLiNER is mandatory in production,
+gate's stamp; (gate) the pi-ai `Models` class itself redacts every chat request through the redact service (regex, entropy, GLiNER), fail closed; (policy) GLiNER is mandatory in production,
 images are stripped by default, every request is audited. See README "Privacy guarantees". Risks: GLiNER misses entities; node:http(s)-based SDKs bypass the in-process guard but not the network layer;
 the allowlist is host-based (an allowlisted host that is also a general-purpose proxy would defeat it); the sandbox shell and Playwright have their own internet egress by design.

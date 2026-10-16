@@ -31,14 +31,14 @@ export function ConnectModelDialog({ scope, initial, onClose, onDone }: { scope:
           <section className="grid gap-2"><h3 className="text-sm font-medium">Sign in with an account</h3>
             <div className="grid gap-2 sm:grid-cols-3">
               {list.data?.oauth.map((o) => (
-                <button key={o.id} onClick={() => setPicked(o.id)} className="grid content-start gap-1 rounded-[12px] border border-line bg-sheet p-3 text-left text-sm transition-colors hover:border-hefyn hover:bg-hefyn/5">
-                  <span className="font-medium">{o.name}</span>{o.description && <span className="line-clamp-2 text-xs text-soft">{o.description}</span>}{o.subscription && <span><Chip tone="blue">Subscription</Chip></span>}
+                <button key={o.id} onClick={() => setPicked(o.id)} className="grid content-start gap-1 rounded-xl border border-border bg-raised p-3 text-left text-sm transition-colors hover:border-foreground hover:bg-foreground/5">
+                  <span className="font-medium">{o.name}</span>{o.description && <span className="line-clamp-2 text-xs text-muted">{o.description}</span>}{o.subscription && <span><Chip tone="blue">Subscription</Chip></span>}
                 </button>
               ))}
             </div>
-            {list.data && !list.data.oauth.length && <p className="text-sm text-soft">No sign-in providers are available. Use an API key instead.</p>}
+            {list.data && !list.data.oauth.length && <p className="text-sm text-muted">No sign-in providers are available. Use an API key instead.</p>}
           </section>
-          <details className="rounded-[12px] bg-ink/[0.04] p-3">
+          <details className="rounded-xl bg-foreground/[0.04] p-3">
             <summary className="cursor-pointer text-sm font-medium">Use an API key instead</summary>
             <form className="mt-3 grid gap-3" onSubmit={async (e) => {
               e.preventDefault(); setErr('');
@@ -47,7 +47,7 @@ export function ConnectModelDialog({ scope, initial, onClose, onDone }: { scope:
               try { await api(scope === 'company' ? '/api/models/providers' : '/api/connectors/models', 'POST', body); onDone(); } catch (x) { setErr((x as Error).message); }
             }}>
               <Field label="Provider"><Select value={kp} onChange={(e) => setKeyProvider(e.target.value)}>{list.data?.apiKey.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</Select></Field>
-              {list.data?.apiKey.find((x) => x.id === kp)?.description && <p className="-mt-1 text-xs text-soft">{list.data.apiKey.find((x) => x.id === kp)!.description}</p>}
+              {list.data?.apiKey.find((x) => x.id === kp)?.description && <p className="-mt-1 text-xs text-muted">{list.data.apiKey.find((x) => x.id === kp)!.description}</p>}
               <Field label="API key"><Input name="apiKey" type="password" required autoComplete="off" /></Field>
               <Field label={`Base URL ${kp === 'custom' ? '(required)' : '(optional)'}`}><Input name="baseUrl" type="url" required={kp === 'custom'} placeholder="https://…/v1" /></Field>
               {kp === 'custom' && <Field label="Model ids, comma separated"><Input name="models" required placeholder="llama3.1:8b, qwen2.5" /></Field>}
@@ -91,19 +91,19 @@ export function OAuthFlow({ start, status, complete, label, onDone }: {
     <div className="grid gap-3">
       {!s && <button type="button" className={buttonPrimary} disabled={busy} onClick={go}>{busy ? <Loader2 size={16} className="animate-spin" aria-hidden /> : <LogIn size={16} aria-hidden />}{label}</button>}
       {s?.device && (
-        <div className="grid gap-2 rounded-[12px] bg-ink/[0.05] p-5 text-center">
-          <p className="text-sm text-soft">Open <a className="inline-flex items-center gap-1 text-hefyn underline" href={s.device.verificationUrl} target="_blank" rel="noreferrer">{s.device.verificationUrl}<ExternalLink size={12} aria-hidden /></a> and enter this code:</p>
+        <div className="grid gap-2 rounded-xl bg-foreground/[0.05] p-5 text-center">
+          <p className="text-sm text-muted">Open <a className="inline-flex items-center gap-1 text-foreground underline underline-offset-2 underline" href={s.device.verificationUrl} target="_blank" rel="noreferrer">{s.device.verificationUrl}<ExternalLink size={12} aria-hidden /></a> and enter this code:</p>
           <div className="flex items-center justify-center gap-3"><code className="font-mono text-3xl font-semibold tracking-widest" aria-label="Device code">{s.device.userCode}</code>
             <button type="button" className={`${buttonGhost} p-2`} aria-label="Copy code" onClick={() => navigator.clipboard.writeText(s.device!.userCode).then(() => toast('Code copied'), () => toast('Could not copy. Select the code instead.', true))}><Copy size={16} /></button></div>
-          <p className="flex items-center justify-center gap-2 text-xs text-soft" role="status"><Loader2 size={12} className="animate-spin" aria-hidden />Waiting for you to confirm…</p>
+          <p className="flex items-center justify-center gap-2 text-xs text-muted" role="status"><Loader2 size={12} className="animate-spin" aria-hidden />Waiting for you to confirm…</p>
         </div>
       )}
       {s?.authUrl && !s.needsPaste && (
-        <p className="flex items-center gap-2 text-sm text-soft" role="status"><Loader2 size={14} className="animate-spin" aria-hidden />Finish signing in in the new tab. <a className="text-hefyn underline" href={s.authUrl} target="_blank" rel="noreferrer">Open it again</a></p>
+        <p className="flex items-center gap-2 text-sm text-muted" role="status"><Loader2 size={14} className="animate-spin" aria-hidden />Finish signing in in the new tab. <a className="text-foreground underline underline-offset-2 underline" href={s.authUrl} target="_blank" rel="noreferrer">Open it again</a></p>
       )}
       {s?.needsPaste && complete && (
         <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); setErr(''); try { const r = await complete(s.flowId, code.trim()); finish(r); if (r.state === 'error') setErr(r.error ?? 'Sign-in failed.'); } catch (x) { setErr((x as Error).message); } }}>
-          <p className="text-sm text-soft">Sign in in the new tab{s.authUrl && <> (<a className="text-hefyn underline" href={s.authUrl} target="_blank" rel="noreferrer">open it again</a>)</>}. If the page ends on an error or shows a code, copy the code or the full address-bar URL and paste it here.</p>
+          <p className="text-sm text-muted">Sign in in the new tab{s.authUrl && <> (<a className="text-foreground underline underline-offset-2 underline" href={s.authUrl} target="_blank" rel="noreferrer">open it again</a>)</>}. If the page ends on an error or shows a code, copy the code or the full address-bar URL and paste it here.</p>
           <Field label="Code or redirect URL"><Input value={code} onChange={(e) => setCode(e.target.value)} required autoComplete="off" /></Field>
           <div><button className={buttonPrimary}><Check size={16} aria-hidden />Complete sign-in</button></div>
         </form>

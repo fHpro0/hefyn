@@ -1,87 +1,89 @@
-# hefyn — UI design direction (v2)
+# hefyn — UI design (v3)
 
-Subject: a team workspace where AI agents work on company data, and nothing personal reaches the model
-unsealed. Audience: people who don't live in a terminal. Primary job: give an agent a task, watch it work,
-and *see* what left the building.
+Replaces v2. No colours, logo or theme files from the native app (now warden) are used any more; hefyn has
+its own identity. Reference point: the calm, keyboard-first density of tools like T3 Code (shadcn/ui on
+Base UI, zinc neutrals, lucide icons) — but with hefyn's own signature: the redaction bar.
 
-## The one bold thing: seals
+Subject: a team workspace where AI agents work on company data and nothing personal reaches the model
+unsealed. Audience: people who are not terminal users but work with agents every day. Primary job: give a
+task, follow the agent, see what left the building.
 
-Every value the privacy layer replaced is a **seal**. In the transcript the user sees their real text, but
-sealed spans carry a fine violet underline with a tiny seal glyph; hover/focus shows "Sent to the model as
-EMAIL_1". In payloads (the ledger) the placeholder is a solid violet seal token in mono. When a message is
-sent, its sealed spans get stamped once (single 300 ms press animation) as soon as the audit arrives — the
-only ambient motion in the product. Everything else stays quiet.
+## Signature: the redaction bar
+
+The brand mark is a short horizontal bar on a rounded square — the black bar of a redacted document.
+The same bar appears where it carries meaning:
+- **Seals**: in the user's own messages, sealed values get a 2 px violet bar *under* the text (not a
+  dotted underline); hover/focus shows "Sent to the model as EMAIL_1".
+- **Ledger payloads**: placeholders render as solid violet bars with the seal name in mono inside.
+- **Logo/wordmark**: `hefyn` in the UI sans, the mark to its left.
+When a message is sent, its seals slide in once (180 ms, left to right) when the audit arrives — the only
+ambient motion. Panels open instantly (no slide animations), like T3 Code's default.
 
 ## Tokens
 
-Colour (light / dark)
-| Name | Light | Dark | Use |
+Neutrals are zinc, monochrome-first; colour is reserved for meaning.
+
+| Token | Light | Dark | Use |
 |---|---|---|---|
-| paper | `#F5F6FA` | `#0D1120` | app background (cool, never cream) |
-| sheet | `#FFFFFF` | `#151A2C` | raised surfaces: panes, composer, dialogs |
-| ink | `#151B30` | `#E6E9F5` | text (navy ink, not neutral black) |
-| ink-soft | `#5B6380` | `#9AA2BF` | secondary text, icons |
-| line | `#E2E5EF` | `#262C44` | hairlines between regions only |
-| hefyn blue | `#2563EB` | `#5B8DEF` | primary actions, focus ring, selection (from the logo) |
-| seal | `#6A4DF4` | `#9C88FF` | seals, agents, privacy ledger |
-| ok / alarm / caution | `#0E9F6E` / `#E5484D` / `#C98A04` | `#3DD68C` / `#FF6369` / `#F5B83D` | status only |
+| background | `#FFFFFF` | `#09090B` | app canvas |
+| surface | `#FAFAFA` | `#111113` | sidebar, panels |
+| raised | `#FFFFFF` | `#18181B` | menus, dialogs, composer |
+| foreground | `#09090B` | `#FAFAFA` | text, primary buttons (inverted) |
+| muted | `#71717A` | `#A1A1AA` | secondary text, icons |
+| border | `#E4E4E7` | `#27272A` | hairlines |
+| seal | `#5B3DF5` | `#8B7BFF` | seals, agents, privacy — the only brand colour |
+| success / danger / warning | `#16A34A` / `#DC2626` / `#CA8A04` | `#4ADE80` / `#F87171` / `#FACC15` | status only (+ AA text variants) |
 
-Type
-- **Schibsted Grotesk** (variable, self-hosted via fontsource) for everything: UI 14/20, body 15/24,
-  titles 22/28 semibold with tight tracking (-0.01em), page titles 28/34. Sentence case everywhere.
-- **JetBrains Mono** only where text *is* machine text: code, tool output, payloads, seal tokens. Never for
-  labels, counts or dates.
-- No ALL CAPS labels, no eyebrows above headings, no middle-dot meta strings, no arrows appended to buttons.
-
-Shape & depth
-- Radius by hierarchy: panes 16, controls 10, chips/seals full. No left accent bars.
-- Depth from surface colour (paper vs sheet) and one soft shadow for floating layers only (composer, dialogs,
-  popovers). Regions are separated by space or a single hairline, not by boxing everything.
+- **Primary action = foreground fill** (black button on light, white on dark), like shadcn. Secondary =
+  border + transparent. Destructive = danger text, filled only in confirm dialogs.
+- **Type**: IBM Plex Sans for UI (13/18 controls, 14/22 body, 16/24 transcript prose, 20/28 titles,
+  semibold, no tracking games) and IBM Plex Mono for machine text (code, tool output, payloads, seal names,
+  keyboard shortcuts). Self-hosted via fontsource. Sentence case everywhere, no all-caps labels.
+- **Geometry**: compact. Controls 32 px high, radius 8; panels/dialogs radius 12; chips/seals radius 6
+  (bars, not pills). Hairline borders, no drop shadows except floating layers (composer, menus,
+  command palette, dialogs) which use a subtle shadow + `backdrop-blur(12px)` at 80 % opacity.
+- **Icons**: lucide, 16 px, stroke 1.75, muted colour by default.
 
 ## Layout
 
 ```
-┌──┬──────────────┬───────────────────────────────────────┬─────────────┐
-│◉ │ Conversations│  Title                      model ▾  ⛨ 3 │ Ledger      │
-│💬│  + New       │                                        │ (drawer,    │
-│📁│  today       │   user block (right, sheet bg)         │  toggled by │
-│⬡ │   ▸ Q3 rep…  │                                        │  ⛨ button)  │
-│⚙ │  earlier     │   │ read  /files/q3.csv          12ms  │ request 4   │
-│  │   ▸ …        │   ├─● writer  “draft the summary”      │  seals      │
-│  │              │   │   └ write /files/summary.md        │  payload    │
-│👤│              │   answer prose, 68ch measure            │             │
-│  │              │  ┌──────────────────────────────────┐  │             │
-│  │              │  │ composer (floating sheet)  📎  ⏎ │  │             │
-└──┴──────────────┴──┴──────────────────────────────────┴──┴─────────────┘
- rail  context pane            transcript (left-aligned)         ledger
+┌───────────────────────┬────────────────────────────────────────────┬──────────────┐
+│ ▣ hefyn        ⌘K  ⇤  │ Q3 summary            model ▾   ▭ 2   ⌘J  │ Ledger       │
+│───────────────────────│────────────────────────────────────────────│ (right panel │
+│ ✎ New chat            │                                            │  ⌘L; also    │
+│ ⌕ Search              │   user message (subtle surface block)      │  files/diff) │
+│ ▤ Files   ⬡ Hub       │                                            │              │
+│───────────────────────│   ● read /files/q3.csv              12 ms  │              │
+│ Today                 │   ● writer  Draft the summary     1.8 s ▾  │              │
+│  Q3 summary        ●  │   │  …                                     │              │
+│  Pricing review       │   answer prose (68ch)                      │              │
+│ Earlier               │                                            │              │
+│  …                    │  ┌───────────── composer ─────────────┐    │              │
+│───────────────────────│  │ Ask hefyn…          📎  model  ⏎  │    │              │
+│ ⚙ Settings   ◯ Ada ▾  │  └────────────────────────────────────┘    │              │
+└───────────────────────┴──────────────────┬─────────────────────────┴──────────────┘
+                                           │ terminal drawer (⌘J): sandbox shell output
 ```
-- **Rail** (64 px): logo mark, Chat, Files, Hub, Settings; user avatar at the bottom. Icons + tooltips.
-- **Context pane** (260 px, collapsible): conversation list grouped by day for Chat; section nav for
-  Settings; folder tree for Files; filters for Hub.
-- **Transcript**: left-aligned, max 68ch. Assistant text is prose, not a bubble. User messages are compact
-  sheet blocks aligned right. Tool calls and delegations form an **activity timeline** in the gutter (a real
-  sequence, so the line + nodes carry information): one line per step, expandable; delegated agents branch
-  into an indented violet lane. Shell output opens in a dark terminal sheet inside the step.
-- **Ledger** (right drawer, 360 px, toggled by the shield button that shows the seal count): one entry per
-  model request — model, status, seals as tokens, bytes, expandable exact payload; blocked requests in alarm.
-- **Settings**: two-column rows — left: name + one-sentence explanation; right: the control. No card stacks.
-- **Usage**: one chart (cost per day, 30 slots) and plain tabular rows; numbers in tabular figures of
-  Schibsted, not mono.
-- **Hub**: dense list rows (icon by kind, name, description, source, install button); detail in a side sheet.
-- Responsive: below 1100 px the ledger becomes an overlay; below 900 px the context pane collapses behind the
-  rail; below 640 px the rail becomes a bottom bar.
+- **One sidebar** (260 px, collapsible with ⇤ / ⌘B): brand + command palette button, primary actions
+  (New chat, Search, Files, Hub), threads grouped by day with a running indicator, settings + account at
+  the bottom. No separate icon rail.
+- **Top bar** (48 px): thread title (editable), model picker, ledger toggle with seal count, terminal toggle.
+- **Transcript**: left-aligned, max 68ch, 16 px prose. User messages: subtle surface block, full width of
+  the column (not chat bubbles). Tool calls and delegations: compact one-line rows with a status dot,
+  expandable; delegated agents indent with a seal-coloured rail.
+- **Right panel** (360 px, ⌘L): Ledger by default; also shows a file preview or diff when opened from a step.
+- **Terminal drawer** (bottom, ⌘J): the sandbox shell's commands and output for this thread, mono, dark in
+  both themes.
+- **Command palette** (⌘K): new chat, switch thread, open settings pages, connect a model, toggle
+  ledger/terminal, change theme (system/light/dark), search the hub.
+- **Settings**: a page with a left section list and rows (label + one-line help | control), shadcn-style.
+- **Hub**: dense table-like list with kind icon, name, description, source; detail in the right panel.
+- Responsive: <1100 px right panel overlays; <800 px sidebar becomes a sheet; composer stays docked.
 
 ## Principles
-1. The privacy layer is visible, never alarming: violet means "sealed", red only means "blocked".
-2. Structure only where it informs: the timeline is a sequence; nothing else gets numbers or boxes.
-3. Calm by default, one moment of motion (the stamp). Respect `prefers-reduced-motion`.
-4. Write like the product talks to a colleague: plain verbs, sentence case, errors say what to do next.
-
-## Review against generic defaults
-- Plan v1 had "slate dark sidebar + cards with blue left bars" (current UI) → replaced by rail + panes,
-  hierarchy by surface, no accent bars.
-- Considered Inter/Geist → rejected as the default everyone ships; Schibsted Grotesk has a sturdy,
-  newspaper-grade voice that fits "seals and ledgers" without looking like a template.
-- Considered near-black + one neon accent for dark mode → rejected; dark mode is deep navy ink with the same
-  violet seal, so both themes read as the same brand.
-- Mono for labels/counts (current UI) → restricted to machine text only.
+1. Monochrome first. Colour means something: violet = sealed/agent, red = blocked/destructive.
+2. Keyboard first: every main action has a shortcut and is in the palette; focus is always visible
+   (2 px foreground ring with offset).
+3. Dense but breathable: 32 px controls, 8 px grid, generous transcript measure.
+4. One motion moment (seals sliding in); everything else is instant. `prefers-reduced-motion` respected.
+5. Copy: plain verbs, sentence case, errors say what to do next.

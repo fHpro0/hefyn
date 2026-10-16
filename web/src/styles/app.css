@@ -1,43 +1,49 @@
 @import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
 
-/* hefyn v2 palette (docs/UI-DESIGN.md). Dark follows prefers-color-scheme. */
+/* hefyn v3 tokens (docs/UI-DESIGN.md): zinc neutrals, one brand colour (seal violet). The .dark class is set by the theme script in Layout.astro. */
 :root {
-  --paper: #f5f6fa; --sheet: #ffffff; --ink: #151b30; --soft: #5b6380; --line: #e2e5ef; --field: #8d95b0;
-  --hefyn: #2563eb; --on-hefyn: #ffffff; --seal: #6a4df4; --on-seal: #ffffff;
-  --ok: #0e9f6e; --alarm: #e5484d; --caution: #c98a04;
-  --ok-ink: #0a7f57; --alarm-ink: #c2282d; --caution-ink: #8a5e00;
-  --float: 0 12px 32px -8px rgb(21 27 48 / 0.18), 0 2px 6px rgb(21 27 48 / 0.08);
+  --background: #ffffff; --surface: #fafafa; --raised: #ffffff; --foreground: #09090b; --muted: #71717a; --border: #e4e4e7; --input: #a1a1aa;
+  --seal: #5b3df5; --on-seal: #ffffff;
+  --success: #16a34a; --danger: #dc2626; --warning: #ca8a04;
+  --success-ink: #15803d; --danger-ink: #b91c1c; --warning-ink: #854d0e;
+  --float: 0 8px 28px -6px rgb(9 9 11 / 0.16), 0 1px 3px rgb(9 9 11 / 0.08);
+  color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #0d1120; --sheet: #151a2c; --ink: #e6e9f5; --soft: #9aa2bf; --line: #262c44; --field: #646d91;
-    --hefyn: #5b8def; --on-hefyn: #0d1120; --seal: #9c88ff; --on-seal: #0d1120;
-    --ok: #3dd68c; --alarm: #ff6369; --caution: #f5b83d;
-    --ok-ink: #3dd68c; --alarm-ink: #ff6369; --caution-ink: #f5b83d;
-    --float: 0 12px 32px -8px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.35);
-  }
+.dark {
+  --background: #09090b; --surface: #111113; --raised: #18181b; --foreground: #fafafa; --muted: #a1a1aa; --border: #27272a; --input: #63636b;
+  --seal: #8b7bff; --on-seal: #09090b;
+  --success: #4ade80; --danger: #f87171; --warning: #facc15;
+  --success-ink: #4ade80; --danger-ink: #f87171; --warning-ink: #facc15;
+  --float: 0 8px 28px -6px rgb(0 0 0 / 0.6), 0 1px 3px rgb(0 0 0 / 0.4);
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-paper: var(--paper); --color-sheet: var(--sheet); --color-ink: var(--ink); --color-soft: var(--soft);
-  --color-line: var(--line); --color-field: var(--field);
-  --color-hefyn: var(--hefyn); --color-on-hefyn: var(--on-hefyn); --color-seal: var(--seal); --color-on-seal: var(--on-seal);
-  --color-ok: var(--ok); --color-alarm: var(--alarm); --color-caution: var(--caution);
-  --color-ok-ink: var(--ok-ink); --color-alarm-ink: var(--alarm-ink); --color-caution-ink: var(--caution-ink);
-  --font-sans: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --color-background: var(--background); --color-surface: var(--surface); --color-raised: var(--raised);
+  --color-foreground: var(--foreground); --color-muted: var(--muted); --color-border: var(--border); --color-input: var(--input);
+  --color-seal: var(--seal); --color-on-seal: var(--on-seal);
+  --color-success: var(--success); --color-danger: var(--danger); --color-warning: var(--warning);
+  --color-success-ink: var(--success-ink); --color-danger-ink: var(--danger-ink); --color-warning-ink: var(--warning-ink);
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   --shadow-float: var(--float);
 }
 
 @layer base {
-  *, ::before, ::after { border-color: var(--line); }
-  html { font-size: 15px; }
-  body { @apply bg-paper font-sans text-ink antialiased; font-feature-settings: 'tnum' 0; }
-  :focus-visible { @apply outline-2 outline-offset-2 outline-hefyn; }
+  *, ::before, ::after { border-color: var(--border); }
+  html { font-size: 14px; }
+  body { @apply bg-background font-sans text-foreground antialiased; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-foreground; }
+  svg.lucide { stroke-width: 1.75; }
   .tnum { font-variant-numeric: tabular-nums; }
 }
 
-/* The one moment of motion: a seal being stamped. */
-@keyframes stamp { 0% { transform: scale(1.35); opacity: 0.2; } 60% { transform: scale(0.94); opacity: 1; } 100% { transform: scale(1); } }
-@media (prefers-reduced-motion: no-preference) { .stamp { animation: stamp 300ms ease-out; display: inline-block; } }
+/* Floating layers: subtle blur at 80 % opacity. */
+.float { background: color-mix(in srgb, var(--raised) 80%, transparent); backdrop-filter: blur(12px); box-shadow: var(--float); }
+
+/* A seal in the user's own text: a 2 px violet bar under it. New seals slide in once (the only ambient motion). */
+.seal-bar { background: linear-gradient(var(--seal), var(--seal)) left bottom / 100% 2px no-repeat; padding-bottom: 2px; }
+@keyframes seal-in { from { background-size: 0% 2px; } to { background-size: 100% 2px; } }
+@media (prefers-reduced-motion: no-preference) { .seal-bar.fresh { animation: seal-in 180ms ease-out; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }

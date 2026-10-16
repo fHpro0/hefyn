@@ -19,8 +19,8 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/chat-dark.png">
-    <img src="docs/screenshots/chat-light.png" alt="A hefyn conversation: the agent reads a file, delegates to a writer agent and runs a shell command, while the privacy ledger on the right shows which values were sealed before the request left" width="900">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/live-chat-ledger-dark.png">
+    <img src="docs/screenshots/live-chat-ledger-light.png" alt="A real hefyn conversation: name, email, address and IBAN in the message are sealed, and the privacy ledger shows the exact payload the model received with NAME_1, EMAIL_1, ADDRESS_1 and IBAN_1 in their place" width="900">
   </picture>
 </p>
 
@@ -35,7 +35,7 @@ IBANs and keys in it are replaced with seals like `{{var:EMAIL_1}}`. The model w
 your tools keep seeing the real values.
 
 It is the team-sized sibling of [warden](https://github.com/fHpro0/warden), a native terminal with the same
-promise, and reuses warden's redaction engine.
+promise, and runs a TypeScript port of warden's redaction engine.
 
 ## What you get
 
@@ -62,12 +62,12 @@ usage and cost per person and model, an audit trail, and everything runs on your
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/chat-ledger-payload-dark.png" alt="The privacy ledger showing a payload with EMAIL_1 and IBAN_1 seals"></td>
+    <td width="50%"><img src="docs/screenshots/chat-dark.png" alt="A conversation with a file read, a delegation to the writer agent, a shell command and the terminal drawer"></td>
     <td width="50%"><img src="docs/screenshots/hub-dark.png" alt="The hub with skills, agents, MCP servers and bundles, one of them flagged"></td>
   </tr>
   <tr>
     <td><img src="docs/screenshots/models-connect-light.png" alt="Connecting a model by signing in with a provider account or using an API key"></td>
-    <td><img src="docs/screenshots/models-light.png" alt="Model settings with connected providers, default models and privacy status"></td>
+    <td><img src="docs/screenshots/palette-dark.png" alt="The command palette with actions, navigation and shortcuts"></td>
   </tr>
 </table>
 
@@ -91,9 +91,10 @@ Running it for real (reverse proxy, sandbox firewall rules, backups, development
 
 ```
  browser ──► web ──────────────► agent (Flue) ──► privacy gate ──► egress proxy ──► model providers
-             login, API, UI       orchestrator      │ redact sidecar     allowlist        MCP servers
-             roles, hub, files    + agents          │ (GLiNER, fail
-                                   │                 │  closed)
+             login, API, UI       orchestrator      │ redact service     allowlist        MCP servers
+             roles, hub, files    + agents          │ (TypeScript: regex,
+             downloads the         │                 │ entropy, GLiNER;
+             GLiNER model          │                 │ no internet; fail closed)
                                    └──► runner ──► sandboxes, Playwright (one per conversation)
 ```
 
@@ -101,9 +102,9 @@ The agent service has no direct internet access. Model traffic can only leave th
 egress proxy, and a request that skipped the gate is refused and logged as a bypass attempt. The details,
 and what is deliberately not covered, are in [docs/DESIGN.md](docs/DESIGN.md).
 
-Built with [Flue](https://flueframework.com) on top of [Pi](https://github.com/badlogic/pi-mono), Hono,
-Better Auth, Astro, React and Tailwind, plus a small Rust sidecar around
-[`warden-redact`](https://github.com/fHpro0/warden).
+Built with the [Flue](https://flueframework.com) agent framework, Hono, Better Auth, Astro, React and
+Tailwind, plus a TypeScript port of the redaction engine of
+[warden](https://github.com/fHpro0/warden) (ONNX Runtime for GLiNER).
 
 ## Status
 

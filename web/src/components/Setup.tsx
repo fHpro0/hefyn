@@ -6,13 +6,13 @@ export function AuthCard({ title, hint, button, onSubmit, fields }: { title: str
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   return (
-    <main className="grid min-h-dvh place-items-center bg-paper p-4">
-      <form className="grid w-full max-w-sm gap-4 rounded-2xl bg-sheet p-8 shadow-float ring-1 ring-line" onSubmit={async (e) => {
+    <main className="grid min-h-dvh place-items-center bg-surface p-4">
+      <form className="grid w-full max-w-sm gap-4 float rounded-xl p-7 ring-1 ring-border" onSubmit={async (e) => {
         e.preventDefault(); setBusy(true); setErr('');
         try { await onSubmit(Object.fromEntries(new FormData(e.currentTarget) as any)); } catch (x) { setErr((x as Error).message); setBusy(false); }
       }}>
-        <Wordmark />
-        <div className="mt-2"><h1 className="text-[28px] leading-[34px] font-semibold tracking-[-0.01em]">{title}</h1><p className="mt-1 text-[15px] leading-6 text-soft">{hint}</p></div>
+        <Wordmark height={24} />
+        <div className="mt-1"><h1 className="text-xl leading-7 font-semibold">{title}</h1><p className="mt-0.5 text-sm leading-[22px] text-muted">{hint}</p></div>
         {fields.includes('name') && <Field label="Your name"><Input name="name" required autoComplete="name" /></Field>}
         <Field label="Email"><Input name="email" type="email" required autoComplete="email" /></Field>
         <Field label="Password"><Input name="password" type="password" required minLength={8} autoComplete={fields.includes('name') ? 'new-password' : 'current-password'} /></Field>

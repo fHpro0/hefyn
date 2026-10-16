@@ -9,7 +9,7 @@ import { builtinProviders } from '@earendil-works/pi-ai/providers/all';
 import { requests, startFake } from './fake-anthropic.ts';
 import { fakeOAuth, fakeServer } from './fake-oauth.ts';
 
-// The in-process privacy layers against a real sidecar binary (GLiNER off) and the fake upstream:
+// The in-process privacy layers against a real redact service (GLiNER off) and the fake upstream:
 //   1. gate on the pi-ai Models class (plain setProvider and never-connected built-ins included)
 //   2. outbound fetch guard (model-API requests need the gate's stamp)
 //   4. GLiNER mandatory in production   5. images
@@ -22,8 +22,8 @@ process.env.HEFYN_REDACT_URL = `http://127.0.0.1:${RPORT}`;
 
 before(async () => {
   fake = await startFake();
-  redact = spawn('services/redact/target/debug/hefyn-redact-service', [], { env: { ...process.env, HEFYN_REDACT_GLINER: 'off', HEFYN_REDACT_ADDR: `127.0.0.1:${RPORT}` }, stdio: 'inherit' });
-  for (let i = 0; i < 50 && !(await fetch(`http://127.0.0.1:${RPORT}/health`).then((r) => r.ok, () => false)); i++) await new Promise((r) => setTimeout(r, 100));
+  redact = spawn('node', ['dist/redact-server.mjs'], { env: { ...process.env, HEFYN_REDACT_GLINER: 'off', PORT: String(RPORT), HEFYN_REDACT_HOST: '127.0.0.1', HEFYN_INTERNAL_TOKEN: process.env.HEFYN_INTERNAL_TOKEN ?? 'hefyn-dev-internal-token' }, stdio: 'inherit' });
+  for (let i = 0; i < 50 && !(await fetch(`http://127.0.0.1:${RPORT}/live`, { headers: { 'x-hefyn-internal': process.env.HEFYN_INTERNAL_TOKEN ?? 'hefyn-dev-internal-token' } }).then((r) => r.ok, () => false)); i++) await new Promise((r) => setTimeout(r, 100));
 });
 after(() => { redact?.kill(); fake?.close(); });
 

@@ -1,7 +1,7 @@
-import { Copy, ShieldCheck, X } from 'lucide-react';
+import { Copy, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { api, bytes } from './api';
-import { Chip, SealToken, iconButton, toast } from './ui';
+import { Chip, SealToken, iconButton, shortcut, toast } from './ui';
 
 export interface Seal { name: string; label: string; value: string }
 interface Req { id: number; provider: string; model: string; status: 'ok' | 'blocked'; findings: { label: string; count: number }[]; bytes: number; error: string | null; ts: string; seals?: string[] }
@@ -42,9 +42,9 @@ export function SealedText({ text, seals, fresh }: { text: string; seals: Seal[]
     <>{parts.map((p, i) => {
       const s = i % 2 ? live.find((x) => x.value === p) : undefined;
       return s ? (
-        <span key={i} tabIndex={0} className={`group relative underline decoration-seal decoration-1 underline-offset-4 ${fresh.has(s.name) ? 'stamp' : ''}`}>
-          {p}<ShieldCheck size={11} aria-hidden className="ml-0.5 inline align-[-1px] text-seal" />
-          <span role="tooltip" className="pointer-events-none absolute bottom-full left-0 z-20 mb-1 hidden rounded-md bg-ink px-2 py-1 text-xs font-normal whitespace-nowrap text-paper group-hover:block group-focus-visible:block">Sent to the model as {s.name}</span>
+        <span key={i} tabIndex={0} className={`group relative seal-bar ${fresh.has(s.name) ? 'fresh' : ''}`}>
+          {p}
+          <span role="tooltip" className="pointer-events-none absolute bottom-full left-0 z-20 mb-1 hidden rounded-md bg-foreground px-2 py-1 font-sans text-xs font-normal whitespace-nowrap text-background group-hover:block group-focus-visible:block">Sent to the model as {s.name}</span>
         </span>
       ) : <Fragment key={i}>{p}</Fragment>;
     })}</>
@@ -53,7 +53,7 @@ export function SealedText({ text, seals, fresh }: { text: string; seals: Seal[]
 
 const PLACEHOLDER = /(\{\{(?:var|secret):[A-Za-z0-9_]+\}\})/;
 const Payload = ({ text }: { text: string }) => (
-  <pre tabIndex={0} aria-label="Exact payload" className="max-h-72 overflow-auto rounded-[10px] bg-ink/[0.06] p-3 font-mono text-[12px] leading-5 break-words whitespace-pre-wrap">
+  <pre tabIndex={0} aria-label="Exact payload" className="max-h-72 overflow-auto rounded-md bg-foreground/[0.05] p-2.5 font-mono text-[12px] leading-5 break-words whitespace-pre-wrap">
     {text.split(PLACEHOLDER).map((t, i) => (i % 2 ? <SealToken key={i}>{t.slice(2, -2).split(':')[1]}</SealToken> : <Fragment key={i}>{t}</Fragment>))}
   </pre>
 );
@@ -68,25 +68,25 @@ function Entry({ r, payload }: { r: Req; payload?: unknown }) {
   const time = new Date(r.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   if (r.status === 'blocked') {
     return (
-      <article role="alert" className="rounded-[12px] bg-alarm/10 p-3.5">
-        <div className="flex items-center justify-between gap-2 text-sm"><b className="text-alarm-ink">Blocked by the privacy layer</b><span className="tnum text-xs text-soft">{time}</span></div>
-        <p className="mt-1 text-sm">Nothing was sent to {r.model}.{r.error && <span className="text-soft"> {r.error}</span>}</p>
+      <article role="alert" className="rounded-lg border border-danger/30 bg-danger/10 p-3">
+        <div className="flex items-center justify-between gap-2 text-sm"><b className="text-danger-ink">Blocked by the privacy layer</b><span className="tnum text-xs text-muted">{time}</span></div>
+        <p className="mt-1 text-sm">Nothing was sent to {r.model}.{r.error && <span className="text-muted"> {r.error}</span>}</p>
         {r.error && /bypass/i.test(r.error) && <div className="mt-2"><Chip tone="alarm">Bypass blocked</Chip></div>}
       </article>
     );
   }
   const text = payload ? JSON.stringify(payload, null, 2) : '';
   return (
-    <article className="rounded-[12px] bg-ink/[0.04] p-3.5">
-      <div className="flex items-center justify-between gap-2 text-sm"><span className="font-medium">{r.model}</span><span className="tnum text-xs text-soft">{time}</span></div>
+    <article className="rounded-lg border border-border bg-raised p-3">
+      <div className="flex items-center justify-between gap-2 text-sm"><span className="font-medium">{r.model}</span><span className="tnum text-xs text-muted">{time}</span></div>
       <div className="mt-2 flex flex-wrap items-center gap-1.5">{r.seals?.length ? r.seals.map((s) => <SealToken key={s}>{s}</SealToken>) : <Findings f={r.findings} />}
-        {!r.seals?.length && !r.findings.length && <span className="text-sm text-soft">Nothing needed sealing.</span>}</div>
+        {!r.seals?.length && !r.findings.length && <span className="text-sm text-muted">Nothing needed sealing.</span>}</div>
       {r.seals?.length ? <div className="mt-1.5 flex flex-wrap gap-1.5 empty:hidden"><Findings f={r.findings.filter((f) => f.label.startsWith('IMAGE_'))} /></div> : null}
-      <div className="mt-2 flex items-center justify-between text-xs text-soft"><span className="tnum">{bytes(r.bytes)} sent</span>
-        {payload != null && <button className="text-hefyn hover:underline" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? 'Hide payload' : 'Show payload'}</button>}</div>
+      <div className="mt-2 flex items-center justify-between text-xs text-muted"><span className="tnum">{bytes(r.bytes)} sent</span>
+        {payload != null && <button className="text-foreground hover:underline" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? 'Hide payload' : 'Show payload'}</button>}</div>
       {open && payload != null && (
         <div className="mt-2 grid gap-1.5">
-          <div className="flex justify-end"><button className="inline-flex items-center gap-1 text-xs text-soft hover:text-ink" onClick={() => navigator.clipboard.writeText(text).then(() => toast('Copied'), () => toast('Could not copy. Select the text instead.', true))}><Copy size={12} aria-hidden />Copy</button></div>
+          <div className="flex justify-end"><button className="inline-flex items-center gap-1 text-xs text-muted hover:text-foreground" onClick={() => navigator.clipboard.writeText(text).then(() => toast('Copied'), () => toast('Could not copy. Select the text instead.', true))}><Copy size={12} aria-hidden />Copy</button></div>
           <Payload text={text} />
         </div>
       )}
@@ -97,12 +97,12 @@ function Entry({ r, payload }: { r: Req; payload?: unknown }) {
 export function Ledger({ audit, onClose }: { audit?: AuditData; onClose: () => void }) {
   return (
     <>
-      <div className="flex h-14 shrink-0 items-start justify-between px-4 pt-3.5"><div><h2 className="text-[17px] font-semibold tracking-[-0.01em]">Privacy ledger</h2></div>
-        <button className={iconButton} aria-label="Close ledger" onClick={onClose}><X size={16} /></button></div>
-      <p className="px-4 pb-3 text-sm text-soft">Every request to a model, and exactly what was sealed before it left.</p>
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border pr-2 pl-4"><h2 className="text-sm font-medium">Privacy ledger</h2>
+        <button className={iconButton} aria-label={`Close ledger, ${shortcut('L')}`} title={`Close ${shortcut('L')}`} onClick={onClose}><X size={16} /></button></div>
+      <p className="px-4 py-3 text-[13px] text-muted">Every request to a model, and exactly what was sealed before it left.</p>
       <div className="grid min-h-0 grow content-start gap-2.5 overflow-y-auto px-3 pb-4">
         {audit?.requests.length ? audit.requests.map((r) => <Entry key={r.id} r={r} payload={audit.latest?.id === r.id ? audit.latest.payload : undefined} />)
-          : <p className="px-1 py-6 text-center text-sm text-soft">Nothing has been sent yet. Each request to a model will show up here.</p>}
+          : <p className="px-1 py-6 text-center text-sm text-muted">Nothing has been sent yet. Each request to a model will show up here.</p>}
       </div>
     </>
   );

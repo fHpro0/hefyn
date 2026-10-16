@@ -1,17 +1,20 @@
 import { db } from './appdb.ts';
 import { decrypt } from './crypto.ts';
 
-// Shared by web and agent: no Flue imports here.
+// Shared by web and agent: no Flue imports here. The redaction engine is its own service (src/redact-server.ts, internal network,
+// internal token); this is the small client. Fail closed: anything but a 2xx answer is an error and the caller blocks.
+const redactUrl = () => (process.env.HEFYN_REDACT_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://127.0.0.1:8787')).replace(/\/$/, '');
+const headers = () => ({ 'content-type': 'application/json', 'x-hefyn-internal': process.env.HEFYN_INTERNAL_TOKEN ?? 'hefyn-dev-internal-token' });
 export async function sidecar(path: string, body: unknown): Promise<any> {
-  const base = process.env.HEFYN_REDACT_URL;
+  const base = redactUrl();
   if (!base) throw new Error('the redaction service is not configured (HEFYN_REDACT_URL)');
-  const res = await fetch(base.replace(/\/$/, '') + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(60_000) })
+  const res = await fetch(base + path, { method: 'POST', headers: headers(), body: JSON.stringify(body), signal: AbortSignal.timeout(Number(process.env.HEFYN_REDACT_CLIENT_TIMEOUT_MS) || 60_000) })
     .catch((e) => { throw new Error(`the redaction service is unreachable (${(e as Error).message})`); });
-  if (!res.ok) throw new Error(`the redaction service refused the request (HTTP ${res.status}: ${(await res.text()).slice(0, 200)})`);
-  return res.json();
+  if (!res.ok) throw new Error(`the redaction service refused the request (HTTP ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)})`);
+  return res.json().catch(() => { throw new Error('the redaction service returned an unreadable answer'); });
 }
 
-/** Prompt-injection check for untrusted text (hub content screening, phase 3). Throws when the sidecar fails: deny. */
+/** Prompt-injection check for untrusted text (hub content screening, phase 3). Throws when the service fails: deny. */
 export const guard = (text: string): Promise<{ flagged: boolean; score: number; reason: string }> => sidecar('/guard', { text });
 
 const PLACEHOLDERS = /\{\{var:([A-Z][A-Z0-9_]{0,63})\}\}/g;
@@ -45,11 +48,11 @@ let healthAt = 0, healthVal: { ready: boolean; gliner: boolean } | undefined;
 /** Sidecar health, cached 5 s. `gliner` = the GLiNER detector is loaded. Never throws. */
 export async function sidecarHealth(fresh = false): Promise<{ ready: boolean; gliner: boolean }> {
   if (!fresh && healthVal && Date.now() - healthAt < 5000) return healthVal;
-  const base = process.env.HEFYN_REDACT_URL;
+  const base = redactUrl();
   let v = { ready: false, gliner: false };
   if (base) {
     try {
-      const j: any = await (await fetch(base.replace(/\/$/, '') + '/health', { signal: AbortSignal.timeout(3000) })).json();
+      const j: any = await (await fetch(base + '/health', { headers: headers(), signal: AbortSignal.timeout(3000) })).json();
       v = { ready: !!j.ready, gliner: Array.isArray(j.detectors) && j.detectors.includes('gliner') };
     } catch { /* unreachable: not ready */ }
   }

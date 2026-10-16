@@ -11,6 +11,7 @@ x-dev: &dev
     HEFYN_URL: http://localhost:4321
     HEFYN_AGENT_URL: http://agent:5174
     HEFYN_REDACT_URL: http://redact:8787
+    HEFYN_REDACT_GLINER: ${HEFYN_REDACT_GLINER:-off} # regex + entropy only by default; on = web downloads the model into dev-data
     HEFYN_DRAIN_TIMEOUT_MS: ${HEFYN_DRAIN_TIMEOUT_MS:-60000}
     NODE_ENV: development
 services:
@@ -44,11 +45,22 @@ services:
         - { action: rebuild, path: ./vite.config.ts }
         - { action: rebuild, path: ./flue.config.ts }
   redact:
+    <<: *dev
+    command: ["node", "src/redact-server.ts"]
     environment:
-      HEFYN_REDACT_GLINER: ${HEFYN_REDACT_GLINER:-off}
+      <<: *devenv
+      PORT: "8787"
+    restart: unless-stopped
+    networks: [core]
+    cpus: ${HEFYN_REDACT_CPUS:-2}
+    mem_limit: ${HEFYN_REDACT_MEMORY:-1536m}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8787/live',{headers:{'x-hefyn-internal':process.env.HEFYN_INTERNAL_TOKEN}}).then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 10s
     develop:
       watch:
-        - { action: rebuild, path: ./services/redact, ignore: [target/] }
+        - { action: sync+restart, path: ./src/server/redact, target: /app/src/server/redact }
+        - { action: sync+restart, path: ./src/redact-server.ts, target: /app/src/redact-server.ts }
   runner:
     volumes: !override [dev-data:/data, /var/run/docker.sock:/var/run/docker.sock] # the dev stack has its own data volume
     develop:

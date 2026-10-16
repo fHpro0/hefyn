@@ -17,7 +17,7 @@ export default function Connectors() {
 function Content({ team, managed, imagesAllowed }: { team: boolean; managed: boolean; imagesAllowed?: boolean }) {
   const models = useLoad<ModelConn[]>('/api/connectors/models');
   const mcp = useLoad<Mcp[]>('/api/connectors/mcp');
-  const [dlg, setDlg] = useState<'model' | 'mcp'>();
+  const [dlg, setDlg] = useState<'model' | 'mcp' | undefined>(location.hash === '#connect' ? 'model' : undefined);
   const [signin, setSignin] = useState<Mcp>();
   const [token, setToken] = useState<Mcp>();
   const [testing, setTesting] = useState<string>();
@@ -61,7 +61,7 @@ function Content({ team, managed, imagesAllowed }: { team: boolean; managed: boo
                 <button className={buttonGhost} onClick={() => test(s)} disabled={testing === s.id}>{testing === s.id ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <Zap size={14} aria-hidden />}Test</button>
                 {!s.connected && s.auth === 'oauth' && (s.mine || s.visibility === 'team') && <button className={buttonGhost} onClick={() => setSignin(s)}><LogIn size={14} aria-hidden />Sign in</button>}
                 {s.auth === 'bearer' && s.mine && (!s.sharedAccount || team) && <button className={buttonGhost} onClick={() => setToken(s)}><KeyRound size={14} aria-hidden />{s.connected ? 'Replace token' : 'Set token'}</button>}
-                {s.mine && <button className="rounded-[10px] p-2 text-soft hover:bg-alarm/10 hover:text-alarm-ink" aria-label={`Remove ${s.name}`} onClick={() => setDel({ label: `Remove ${s.name}?`, run: () => api(`/api/connectors/mcp/${s.id}`, 'DELETE').then(() => done('Removed')) })}><Trash2 size={15} /></button>}
+                {s.mine && <button className="rounded-lg p-2 text-muted hover:bg-danger/10 hover:text-danger-ink" aria-label={`Remove ${s.name}`} onClick={() => setDel({ label: `Remove ${s.name}?`, run: () => api(`/api/connectors/mcp/${s.id}`, 'DELETE').then(() => done('Removed')) })}><Trash2 size={15} /></button>}
               </div>
             </Row>
           ))}
@@ -94,7 +94,7 @@ function McpDialog({ team, onClose, onDone }: { team: boolean; onClose: () => vo
     <Dialog title="Add an MCP server" onClose={onClose} wide>
       {created ? (
         <>
-          <p className="text-sm text-soft">Server saved. Sign in so hefyn can use it.</p>
+          <p className="text-sm text-muted">Server saved. Sign in so hefyn can use it.</p>
           <McpSignin id={created} onDone={onDone} />
           <div className="flex justify-end"><button className={buttonGhost} onClick={onDone}>Skip for now</button></div>
         </>

@@ -10,9 +10,12 @@ import { AGENT_URL, INTERNAL_TOKEN, runtimeState } from './server/runtime.ts';
 import { installFetchGuard } from './server/netguard.ts';
 import { egressAllowlist } from './server/egress-list.ts';
 import { cleanupTmp } from './server/storage.ts';
+import { ensureModelFiles } from './server/redact/download.ts';
 
 // The web process never sends model requests: any model-API call from here is a bypass and is refused.
 await installFetchGuard();
+// The agent has no internet: web downloads the GLiNER model files (a plain file download from the Hugging Face file hosts, not a model API call) into the models volume; the redact service reads them.
+void ensureModelFiles((m) => console.log(`[hefyn] ${m}`));
 
 // The web service: auth, /api, the UI, and a guarded reverse proxy to the agent service.
 const app = new Hono();

@@ -24,9 +24,11 @@ picked up; remove them with `docker compose -p agent down -v`.
 |---|---|---|
 | `web` | auth, `/api`, UI, guarded proxy to the agent | published on :3000 |
 | `agent` | Flue runtime: agents, conversations, privacy gate | internal only, leaves via `egress` |
-| `redact` | redaction sidecar (regex, entropy, GLiNER via `warden-redact`) | internal |
+| `redact` | redaction engine (regex, entropy, GLiNER, TypeScript port of warden's), CPU/memory limited, warm across agent restarts | internal only, no internet |
 | `egress` | allowlisting forward proxy for model, OAuth and MCP traffic | internal + internet |
 | `runner` | the only holder of `docker.sock`; starts sandboxes and Playwright | internal |
+
+The `redact` service runs the redaction engine: regex rules, entropy and GLiNER (inference in worker threads; regex, entropy and the hub guard in a worker pool with a hard per-job timeout, `HEFYN_REDACT_WORKERS` default 2, `HEFYN_REDACT_TIMEOUT_MS` default 10000). It is a separate container so the model stays loaded when `agent` restarts and so it has its own limits (`HEFYN_REDACT_CPUS`, default 2; `HEFYN_REDACT_MEMORY`, default 1536m). It has no internet: on first start `web` downloads the GLiNER files (~86 MB, SHA-256 verified) from Hugging Face into the `redact-models` volume, which `redact` mounts read-only. Until they are there `redact` reports GLiNER as `loading` and no model request is sent (fail closed). Agent and web reach it at `HEFYN_REDACT_URL` with the internal token. `HEFYN_REDACT_GLINER=off` (regex and entropy only) additionally needs `HEFYN_ALLOW_NO_GLINER=1` in production.
 
 Data lives in the `hefyn-data` volume (`HEFYN_DATA_DIR`): `app.db` (auth, roles, profiles, usage, hub,
 connectors), `flue.db` (conversations) and `users/<id>/{files,tmp}`. Web and agent run as uid/gid 1000;
@@ -56,12 +58,12 @@ before anything is sent to a model unless an admin allows unredacted images.
 
 - **Docker with hot reload:** `bun run dev:docker`, open http://localhost:4321. Changes in `src/`, `web/src/`,
   `assets/` and `profiles/` reload in place; dependency or config changes rebuild only the affected service.
-  GLiNER is off in dev (`HEFYN_REDACT_GLINER=on` turns it on, ~83 MB download).
-- **Without Docker:** `bun install && bun run dev` (agent on :5174, web API on :5173, Astro on :4321). Start the
-  sidecar with `HEFYN_REDACT_GLINER=off cargo run --manifest-path services/redact/Cargo.toml` and set
-  `HEFYN_REDACT_URL=http://localhost:8787`. The server runs on Node ≥ 22.19 (Bun lacks `node:sqlite`).
+  GLiNER is off in dev (`HEFYN_REDACT_GLINER=on` turns it on, web downloads ~86 MB into the dev data volume).
+- **Without Docker:** `bun install && bun run dev` (agent on :5174, web API on :5173, Astro on :4321). `bun run dev` also starts the redact
+  service (`node src/redact-server.ts`, :8787; `HEFYN_REDACT_GLINER=off` skips the model, `on` downloads it to `data/models/gliner`).
+  The server runs on Node ≥ 22.19 (Bun lacks `node:sqlite`).
 - **Checks:** `bun run typecheck`, `bun run test` (builds, then `node --test`; a fake model upstream, no API keys
-  needed; the sandbox tests use Docker when available), `cargo test` in `services/redact`.
+  needed; the sandbox tests use Docker when available). The GLiNER half of `test/redact-parity.test.ts` is skipped unless the model files are present (`HEFYN_REDACT_MODEL_DIR` or `data/models/gliner`).
 
 ## Further reading
 

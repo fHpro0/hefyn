@@ -31,8 +31,8 @@ Owner only (404 otherwise), `Cache-Control: no-store`. `[{ name: "EMAIL_1", labe
 - Every model request is redacted by GLiNER (+ regex/entropy) before it leaves; blocked requests are audited with a reason. A model-API request that did not pass the gate is refused as a **bypass attempt** (audit `blocked`, `error` contains "bypass attempt").
 - Images: by default the gate replaces images (user images, tool-result images, screenshots) with the text `[image removed by the privacy layer]`; audit findings `IMAGE_REMOVED` x n.
   `GET/POST /api/settings/privacy` (permission `models.manage`) `{ allowImages: boolean }` lets images through unredacted (audit finding `IMAGE_SENT_UNREDACTED`).
-- `GET /api/runtime` additionally returns `privacy: { gliner: boolean, imagesAllowed: boolean }`. `gliner: false` means the redaction service runs without GLiNER
-  (only possible with `HEFYN_ALLOW_NO_GLINER=1` outside production): show a red warning. In production the agent refuses to start and the gate fails closed without GLiNER.
+- `GET /api/runtime` additionally returns `privacy: { gliner: boolean, imagesAllowed: boolean }`. `gliner: false` means the redact service runs without GLiNER (or the model is still downloading or loading)
+  (only possible with `HEFYN_ALLOW_NO_GLINER=1` outside production): show a red warning. In production the gate fails closed without GLiNER (the agent refuses to start when GLiNER is switched off).
 
 ## Agent runtime / restart queue
 

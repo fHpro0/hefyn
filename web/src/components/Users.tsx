@@ -38,7 +38,7 @@ function Content() {
         {users.data && !users.data.length ? <Empty icon={<UsersIcon size={26} />}>No one else has an account yet.</Empty> : (
           <Table head={['Name', 'Email', 'Role']}>
             {users.data?.map((u) => (
-              <tr key={u.id}><td className="font-medium">{u.name}</td><td className="text-soft">{u.email}</td>
+              <tr key={u.id}><td className="font-medium">{u.name}</td><td className="text-muted">{u.email}</td>
                 <td className="w-52"><Select aria-label={`Role of ${u.email}`} value={u.roleId} onChange={async (e) => {
                   try { await api(`/api/users/${u.id}/role`, 'PATCH', { roleId: e.target.value }); toast('Role updated'); } catch (x) { toast((x as Error).message, true); }
                   users.reload();

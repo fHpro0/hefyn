@@ -4,7 +4,6 @@ import { decrypt } from './crypto.ts';
 import { companyResolver, userProviders } from './connectors.ts';
 import { build } from './providers.ts';
 import { installFetchGuard } from './netguard.ts';
-import { glinerRequired, sidecarHealth } from './privacy.ts';
 import { installGate } from './redact.ts';
 import { userOfConversation } from './usage.ts';
 
@@ -43,18 +42,10 @@ observe((e) => {
     .run(userId, e.instanceId, e.request.providerId, e.request.requestedModel, u.input, u.output, u.cacheRead, u.cacheWrite, u.cost.total, e.timestamp);
 });
 
-// The privacy layer comes first: gate every model request, guard outbound fetch, and (in production) refuse to start
-// until the redaction service reports GLiNER active.
+// The privacy layer comes first: gate every model request and guard outbound fetch. The redaction service (GLiNER) is separate and
+// stays warm across agent restarts; the gate checks its readiness per request and fails closed, so the agent does not wait for it.
 installGate();
 await installFetchGuard();
-if (glinerRequired()) {
-  for (let i = 0; ; i++) {
-    const h = await sidecarHealth(true);
-    if (h.ready && h.gliner) break;
-    if (i >= 90) throw new Error('refusing to start: the redaction service is not ready with GLiNER active (HEFYN_REDACT_URL, HEFYN_REDACT_GLINER, or HEFYN_ALLOW_NO_GLINER=1 for dev/test)');
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-}
 syncProviders();
 const bootedAt = Date.now();
 let lastReported = 0;

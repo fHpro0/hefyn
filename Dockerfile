@@ -14,7 +14,7 @@ COPY --from=build /app/package.json /app/bun.lock* ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 # uid/gid 1000 (user `node`): same as the sandbox user, so files written by web/agent and by shells are interchangeable.
-RUN mkdir -p /data && chown 1000:1000 /data
+RUN mkdir -p /data/models && chown -R 1000:1000 /data
 USER 1000:1000
 VOLUME /data
 EXPOSE 3000
