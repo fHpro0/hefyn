@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/logo-dark.gif">
-    <img src="docs/readme/logo-light.gif" alt="hefyn" width="640">
+    <img src="docs/readme/logo-light.gif" alt="hefyn" width="520">
   </picture>
 </p>
 
@@ -32,15 +32,15 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/hero-dark.gif">
-    <img src="docs/readme/hero-light.gif" alt="Four people sign in through one login, a new workflow is shared and used by the team, and it runs on Claude Code with the company ERP" width="100%">
+    <img src="docs/readme/hero-light.gif" alt="Four people sign in through one login. Lena builds a private workflow, shares it with the team, and Tobias and Sofia use it on the same Claude Code team account." width="100%">
   </picture>
 </p>
 
 ## What hefyn is
 
-hefyn gives a whole team one login to standard CLI coding agents (Claude Code, Codex, OpenCode, Pi) in the browser. An admin connects the agents, model keys and tools once; nobody needs their own API key or a separate account per tool.
+hefyn gives a whole team one login to standard CLI coding agents (Claude Code, Codex, OpenCode, Pi) in the browser. An admin sets up one team account per agent and connects the tools once; nobody needs their own API key, a separate account or a model choice.
 
-When someone builds a workflow (an Assistant with its instructions and skills), they share it and the whole team can use it. Each person works in a chat view or the agent's own terminal, and every conversation runs in its own Docker sandbox. hefyn runs no agent of its own: it starts the vendor's CLI and shows what it does.
+People work with workflows, not models. A workflow (an Assistant with its instructions and skills) starts private, and whoever built it can share it with the team when it is ready. Each person works in a chat view or the agent's own terminal, and every conversation runs in its own Docker sandbox. hefyn runs no agent of its own: it starts the vendor's CLI and shows what it does.
 
 Model keys never enter the sandbox. The agent inside talks to a local bridge, which forwards over a unix socket to a
 gateway in hefyn's agent service, and the gateway adds the real key. The agent service (and with it the model traffic of

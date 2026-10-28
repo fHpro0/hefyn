@@ -127,12 +127,12 @@ async function makeGif(name: string, W: number, H: number, fps: number, svgs: st
 const RAMP = " .:+*%@";
 const MARK = ["*@@@%", "@@@@%", "@@@@% .::::::", "@@@@%+@@@@@@@", "@@@@%+@@@@@@@", "@@@@% .: %%%%", "@@@@%   +@@@@", "@@@@%   +@@@@", "*@@@%   +@@@*"]
   .map((l) => l.padEnd(13));
-// Menlo advance = cell width (fs = cw / 0.602), line height ~1.15x font size. The word uses a finer grid.
 // The big ASCII "h" (the mark) is the word's first letter; a small "efyn" cropped from the real wordmark completes it.
-const L_W = 704, L_H = 384, L_OY = 18;
-const M_CW = 16, M_CH = 30, M_FS = M_CW / ADV; // mark: 13x9 cells = 208x270 px
+// Menlo advance = cell width (fs = cw / 0.602). The h is ~1.45x the height of the f in efyn.
+const L_W = 620, L_H = 320, L_OY = 14;
+const M_CW = 12, M_CH = 22, M_FS = M_CW / ADV; // mark: 13x9 cells = 156x198 px
 const W_CW = 4, W_CH = 6, W_FS = 1.25 * W_CW / ADV /* a touch heavier so the fine word keeps weight */; // efyn grid
-const BASE = 114; // px from the raster top to the wordmark baseline (svg y 712, viewBox top 284) = 19 efyn rows
+const BASE = 156; // px from the raster top to the wordmark baseline (svg y 712, viewBox top 284) = 26 efyn rows
 const K = BASE / (712 - 284); // wordmark px per svg unit
 const GAP = M_CW; // one mark cell between the h and the e
 
@@ -182,8 +182,8 @@ async function logo() {
     { x: L_X, y: L_OY, cw: M_CW, ch: M_CH, fs: M_FS, fin: MARK, accent: true },
     { x: wx, y: wy, cw: W_CW, ch: W_CH, fs: W_FS, fin: word, accent: false },
   ];
-  const tagY = wy + word.length * W_CH + 14;
-  if (tagY + 16 + 14 > L_H) throw new Error("canvas too short for the subtitle");
+  const tagY = wy + word.length * W_CH + 10;
+  if (tagY + 16 + 12 > L_H) throw new Error("canvas too short for the subtitle");
   const FPS = 20, N = 100;
   for (const th of THEMES) {
     const back = backdrop(L_W, L_H, th);
@@ -226,18 +226,25 @@ async function logo() {
   }
 }
 
-// ---------- 2. hero: one login + shared workflows ----------
-// Story: four people -> ONE gate -> shared workflows -> agents/tools. A loop of 8 s (160 frames):
-// lena adds a workflow (typed in), tobias and sofia use it (counter ticks), it runs on Claude Code + ERP,
-// results flow back to everyone, the new row fades out so frame 159 -> frame 0 is seamless.
+// ---------- 2. hero: one login, private or shared workflows, one team account per agent ----------
+// Story (10 s loop, 200 frames): lena sends a workflow through the one gate into her PRIVATE panel, types it,
+// runs it on Claude Code + ERP; she shares it (the row slides up into the team panel); tobias and sofia use it
+// (row counter 1->3, Claude Code's "in use by" 1->3: one team account, three people); the row fades out and the
+// counters ease back, so the last frame equals frame 0. No model is ever picked: people pick workflows.
 const H_W = 1200, H_H = 520, H_CW = 10, H_FS = H_CW / ADV, H_CH = 19, H_COLS = 120;
 type Kind = "line" | "fg" | "muted" | "accent";
 interface HCell { ch: string; k: Kind; comp?: string; only?: string }
-const FIRST_ROW = 1, LAST_ROW = 23;
-const HFPS = 20, HT = 160;
-const GX = 22, BUS = 19, NR = 12, PY = [5, 9, 13, 17];
-const NEW_ROW = "▸ Month-end close".padEnd(24) + "by lena";
-const TYPE0 = 18, TAG0 = 50, TICKS = [50, 67, 81], FADE0 = 128;
+const FIRST_ROW = 1, LAST_ROW = 24;
+const HFPS = 20, HT = 200;
+const GX = 22, BUS = 19, RB = 82; // person bus column, gate column, right-hand bus column
+const PY = [5, 9, 13, 17]; // person name rows
+const TEAM_Y = 10, PRIV_Y = 15; // the empty team slot row and lena's private row
+const ROW_NAME = "▸ Month-end close";
+// timeline (frames)
+const TYPE0 = 20, SHARE0 = 90, SLIDE0 = 98, SLIDE1 = 112, FADE0 = 164, FADE1 = 180;
+const ROW_TICKS = [112, 129, 143]; // "used by" 1,2,3 on the shared row
+const CL_TICKS = [52, 139, 153]; // Claude Code "in use by" 1,2,3 ...
+const CL_DOWN = [164, 168, 172]; // ... eased back to 0
 
 function heroBase() {
   const cells = new Map<string, HCell>();
@@ -266,46 +273,57 @@ function heroBase() {
   put(BUS, 11, "├", "line"); put(20, 11, "─", "line"); put(21, 11, "►", "line");
 
   // hefyn frame; its left edge is the gate (drawn as a rect in hero())
-  box(GX, 2, 84, 19);
-  for (let y = 3; y <= 18; y++) cells.delete(`${GX},${y}`);
+  box(GX, 2, 80, 21);
+  for (let y = 3; y <= 20; y++) cells.delete(`${GX},${y}`);
   put(26, 2, " hefyn ", "accent");
   put(GX - 4, 1, "one login", "accent");
-  put(GX - 5, 20, "✓ signed in", "accent", "gate", "gate");
+  put(GX - 5, 22, "✓ signed in", "accent", "gate", "gate");
 
-  // shared workflows panel
-  box(25, 4, 81, 14);
-  put(27, 4, " shared workflows ", "fg");
-  ([["Invoice processing", "anna", 4], ["Support triage", "lena", 4], ["Onboarding checklist", "tobias", 3]] as const).forEach(([n, a, u], i) => {
+  // team workflows
+  box(25, 4, 77, 11);
+  put(27, 4, " team workflows ", "fg");
+  ([["Invoice processing", "anna", 4], ["Support triage", "lena", 4]] as const).forEach(([n, a, u], i) => {
     const y = 6 + 2 * i;
-    put(27, y, ("▸ " + n).padEnd(24), "fg"); put(51, y, "by " + a, "muted"); put(72, y, "used by " + u, "muted");
+    put(27, y, ("▸ " + n).padEnd(24), "fg"); put(51, y, "by " + a, "muted"); put(68, y, "used by " + u, "muted");
   });
+  put(27, TEAM_Y, "▫ free slot", "line", "slot");
+  // private panel
+  box(25, 13, 77, 17);
+  put(27, 13, " private · lena ", "fg");
+  put(27, PRIV_Y, "▫ nothing private yet", "line", "privslot");
+  // inner bus from the gate to the three team rows and the private row
   put(23, 6, "┌", "line"); put(23, 7, "│", "line"); put(23, 8, "├", "line"); put(23, 9, "│", "line");
-  put(23, 10, "├", "line"); put(23, 11, "┤", "line"); put(23, 12, "└", "line");
-  for (const y of [6, 8, 10, 12]) put(24, y, "►", "line");
-  // set-up strip
-  box(25, 16, 81, 18);
-  const s1 = "set up once by anna", s2 = ": agents · keys · tools", sx = mid(s1 + s2, 25, 81);
-  put(sx, 17, s1, "fg"); put(sx + s1.length, 17, s2, "muted");
+  put(23, 10, "├", "line"); put(23, 11, "┤", "line");
+  for (const y of [12, 13, 14]) put(23, y, "│", "line");
+  put(23, 15, "└", "line");
+  for (const y of [6, 8, TEAM_Y, PRIV_Y]) put(24, y, "►", "line");
+  // hint
+  const hint = "pick a workflow, not a model";
+  put(mid(hint, 25, 77), 19, hint, "muted");
 
-  // ready for everyone
-  put(96, 1, "ready for everyone", "muted");
-  box(96, 4, 118, 9); put(98, 4, " agents ", "muted");
-  ["Claude Code", "Codex", "OpenCode", "Pi"].forEach((n, i) => put(98, 5 + i, n, "fg", "a" + i));
-  box(96, 11, 118, 16); put(98, 11, " tools · models ", "muted");
-  ["ERP", "Wiki", "Anthropic", "OpenAI"].forEach((n, i) => put(98, 12 + i, n, "fg", "t" + i));
-  put(81, 12, "├", "line"); put(82, 12, "──", "line"); put(84, 12, "┼", "line"); put(85, 12, "─────", "line");
-  put(90, 5, "┌", "line"); for (const y of [6, 7, 8, 13, 14]) put(90, y, "├", "line");
-  for (const y of [9, 10, 11]) put(90, y, "│", "line");
-  put(90, 12, "┼", "line"); put(90, 15, "└", "line");
-  for (const y of [5, 6, 7, 8, 12, 13, 14, 15]) { put(91, y, "────", "line"); put(95, y, "►", "line"); }
+  // team accounts (one per agent), set up once by the admin
+  put(86, 1, "set up once by anna", "muted");
+  box(86, 2, 118, 16); put(88, 2, " team accounts ", "fg");
+  ["Claude Code", "Codex", "OpenCode", "Pi"].forEach((n, i) => {
+    const y = 5 + 3 * i;
+    put(88, y, n, "fg", "a" + i); put(88, y + 1, "team account", "muted");
+    if (i) put(106, y, `in use by ${[0, 2, 1, 0][i]}`, "muted");
+  });
+  box(86, 18, 118, 21); put(88, 18, " tools ", "fg");
+  ["ERP", "Wiki"].forEach((n, i) => put(88, 19 + i, n, "fg", "t" + i));
 
-  // footer
-  const caps = ["sign in once, use every agent", "build a workflow once, the whole team uses it", "keys and tools set up once by an admin"];
-  caps.reduce((x, s, i) => {
-    put(x, 23, s, "muted");
-    if (i < 2) put(x + s.length + 1, 23, "·", "muted");
-    return x + s.length + 3;
-  }, 1);
+  // team/private rows -> right bus -> accounts and tools
+  for (const y of [TEAM_Y, PRIV_Y]) { put(77, y, "├", "line"); put(78, y, "──", "line"); put(80, y, "┼", "line"); put(81, y, "─", "line"); }
+  put(RB, 5, "┌", "line");
+  for (const y of [6, 7, 9, 12, 13, 16, 17, 18]) put(RB, y, "│", "line");
+  for (const y of [8, 11, 14, 19]) put(RB, y, "├", "line");
+  put(RB, TEAM_Y, "┤", "line"); put(RB, PRIV_Y, "┤", "line"); put(RB, 20, "└", "line");
+  for (const y of [5, 8, 11, 14, 19, 20]) { put(RB + 1, y, "──", "line"); put(RB + 3, y, "►", "line"); }
+
+  // footer, spread out
+  const caps = ["sign in once", "private, or shared with the team", "one team account per agent, no model picking"];
+  const x3 = 119 - caps[2].length, x2 = Math.floor((1 + caps[0].length + x3 - caps[1].length) / 2);
+  [1, x2, x3].forEach((x, i) => put(x, 24, caps[i], "muted"));
 
   // ---- pulses: cells in path order, holds highlight a component ----
   const line = (...pts: number[][]) => {
@@ -331,19 +349,22 @@ function heroBase() {
     return { start, states };
   };
   const toGate = (j: number) => line([17, PY[j]], [BUS, PY[j]], [BUS, 11], [21, 11]);
-  const toRow = line([23, 11], [23, 12], [24, 12]);
-  const use = (start: number, j: number, gateN: number, rowN: number) =>
-    pulse(start, [{ hold: "p" + j, n: 3 }, { move: toGate(j) }, { hold: "gate", n: gateN }, { move: toRow }, { hold: "new", n: rowN }]);
+  const toClaude = (y: number) => line([78, y], [RB, y], [RB, 5], [RB + 3, 5]);
   const pulses = [
-    use(4, 1, 5, 32), // lena adds the workflow: lands at TYPE0, typing ends ~f48, pulse done at f50
-    use(54, 2, 4, 5), // tobias uses it: lands f67
-    use(66, 3, 4, 5), // sofia uses it: lands f81
-    pulse(88, [{ hold: "new", n: 3 }, { move: line([82, 12], [90, 12], [90, 5], [95, 5]) }, { hold: "a0", n: 8 }]), // -> Claude Code
-    pulse(88, [{ hold: "new", n: 3 }, { move: line([82, 12], [95, 12]) }, { hold: "t0", n: 8 }]), // -> ERP
-    ...PY.map((y, k) => pulse(108, [
-      { hold: "new", n: 2 }, { move: line([24, 12], [23, 12], [23, 11]) }, { hold: "gate", n: 3 },
-      { move: line([21, 11], [BUS, 11], [BUS, y], [17, y]) }, { hold: "p" + k, n: 4 },
-    ], false)), // results flow back to everyone
+    // lena -> gate -> private row (it types in while her pulse rests there)
+    pulse(5, [{ hold: "p1", n: 3 }, { move: toGate(1) }, { hold: "gate", n: 5 }, { move: line([23, 11], [23, PRIV_Y], [24, PRIV_Y]) }, { hold: "new", n: 18 }]),
+    // the private row runs on Claude Code and ERP ...
+    pulse(40, [{ hold: "new", n: 3 }, { move: toClaude(PRIV_Y) }, { hold: "a0", n: 8 }]),
+    pulse(40, [{ hold: "new", n: 3 }, { move: line([78, PRIV_Y], [RB, PRIV_Y], [RB, 19], [RB + 3, 19]) }, { hold: "t0", n: 8 }]),
+    // ... and the results return to lena
+    pulse(62, [{ move: [...toClaude(PRIV_Y)].reverse() }, { hold: "new", n: 3 },
+      { move: line([24, PRIV_Y], [23, PRIV_Y], [23, 11], [21, 11], [BUS, 11], [BUS, PY[1]], [17, PY[1]]) }, { hold: "p1", n: 4 }], false),
+    pulse(58, [{ move: [...line([78, PRIV_Y], [RB, PRIV_Y], [RB, 19], [RB + 3, 19])].reverse() }, { hold: "new", n: 2 }], false),
+    // tobias and sofia use the shared row: same gate, same team account
+    ...[[116, 2, 4], [128, 3, 4]].map(([start, j, gateN]) => pulse(start, [
+      { hold: "p" + j, n: 3 }, { move: toGate(j) }, { hold: "gate", n: gateN }, { move: line([23, 11], [23, TEAM_Y], [24, TEAM_Y]) },
+      { hold: "new", n: 3 }, { move: toClaude(TEAM_Y) }, { hold: "a0", n: 6 },
+    ])),
   ];
   for (const p of pulses) if (p.start + p.states.length > HT) throw new Error("pulse runs past the loop end");
   return { cells, pulses };
@@ -352,7 +373,8 @@ function heroBase() {
 function hero() {
   const { cells, pulses } = heroBase();
   const oy = (H_H - (LAST_ROW - FIRST_ROW + 1) * H_CH) / 2 - FIRST_ROW * H_CH;
-  const gx = GX * H_CW + H_CW / 2, gy = oy + 3 * H_CH, gh = 16 * H_CH;
+  const gx = GX * H_CW + H_CW / 2, gy = oy + 3 * H_CH, gh = 18 * H_CH;
+  const ease = (t: number) => t * t * (3 - 2 * t);
   return Promise.all(THEMES.map(async (th) => {
     const back = backdrop(H_W, H_H, th);
     const col: Record<Kind, string> = { line: mix(th.muted, th.bg, 0.55), fg: th.fg, muted: th.muted, accent: th.accent };
@@ -374,30 +396,47 @@ function hero() {
           shapes += `<circle cx="${cx}" cy="${cy}" r="${age ? 3.6 - 0.6 * age : 5}" fill="${clr}" fill-opacity="${age ? 0.85 - 0.2 * age : 1}"/>`;
         });
       }
+      const slotBusy = f >= SLIDE0 - 2 && f < FADE1 + 4, privBusy = f >= TYPE0 - 2 && f < SLIDE0 + 2;
       for (const [key, c] of cells) {
         if (c.only && !active.has(c.only)) continue;
+        if ((c.comp === "slot" && slotBusy) || (c.comp === "privslot" && privBusy)) continue;
         const [x, y] = key.split(",").map(Number);
         g[y][x] = { ch: c.ch, color: c.comp && active.has(c.comp) ? th.accent : col[c.k] };
       }
-      // the new workflow row: typed in, tagged, counted, then faded out
-      const typed = f < TYPE0 ? 0 : Math.min(NEW_ROW.length, f - TYPE0 + 1);
-      const fade = f >= FADE0 ? clamp(1 - (f - FADE0) / 16) : 1;
+      const put = (x: number, y: number, s: string, c: string) =>
+        [...s].forEach((ch, i) => { if (ch !== " ") g[y][x + i] = { ch, color: c }; });
+      // Claude Code's counter: one team account, many people (flashes on each tick, eases back at the end)
+      const ups = CL_TICKS.filter((t) => f >= t).length, downs = CL_DOWN.filter((t) => f >= t).length;
+      put(106, 5, `in use by ${ups - downs}`, CL_TICKS.some((t) => f >= t && f < t + 6) ? th.accent : th.muted);
+
+      // the new workflow row: typed in privately, shared (slides up), counted, faded out. Drawn on its own
+      // layer at a fractional y so the slide is smooth.
+      const typed = f < TYPE0 ? 0 : Math.min(ROW_NAME.length, f - TYPE0 + 1);
+      const fade = f >= FADE0 ? clamp(1 - (f - FADE0) / (FADE1 - FADE0)) : 1;
+      let rowSvg = "";
       if (typed && fade > 0) {
-        const hl = active.has("new"), put = (x: number, s: string, c: string) =>
-          [...s].forEach((ch, i) => { if (ch !== " ") g[NR][x + i] = { ch, color: mix(c, th.bg, fade) }; });
-        [...NEW_ROW.slice(0, typed)].forEach((ch, i) =>
-          put(27 + i, ch, hl || typed < NEW_ROW.length ? th.accent : i >= 24 ? th.muted : th.fg));
-        if (typed < NEW_ROW.length) put(27 + typed, "█", th.accent);
-        if (f >= TAG0 && f < TAG0 + 14) put(61, "shared ✓", th.accent);
-        const n = TICKS.filter((t) => f >= t).length;
-        if (n) put(72, `used by ${n}`, TICKS.some((t) => f >= t && f < t + 6) ? th.accent : th.muted);
+        const r1 = newGrid(1, H_COLS), hl = active.has("new");
+        const p1 = (x: number, s: string, c: string) =>
+          [...s].forEach((ch, i) => { if (ch !== " ") r1[0][x + i] = { ch, color: mix(c, th.bg, fade) }; });
+        const shared = f >= SLIDE1, sliding = f >= SLIDE0 && !shared;
+        p1(27, ROW_NAME.slice(0, typed), hl || typed < ROW_NAME.length || f >= SHARE0 && !shared ? th.accent : th.fg);
+        if (typed < ROW_NAME.length) p1(27 + typed, "█", th.accent);
+        else if (f >= TYPE0 + ROW_NAME.length && f < SHARE0) p1(51, "private · only lena", th.muted);
+        else if (f >= SHARE0 && !shared) p1(51, "share →", th.accent);
+        else if (shared) {
+          p1(51, "by lena", th.muted); p1(59, "team ✓", th.accent);
+          const n = ROW_TICKS.filter((t) => f >= t).length;
+          p1(68, `used by ${n}`, ROW_TICKS.some((t) => f >= t && f < t + 6) ? th.accent : th.muted);
+        }
+        const y = sliding ? PRIV_Y + (TEAM_Y - PRIV_Y) * ease((f - SLIDE0) / (SLIDE1 - SLIDE0)) : shared ? TEAM_Y : PRIV_Y;
+        rowSvg = textLayer(r1, 0, oy + y * H_CH, H_CW, H_CH, H_FS);
       }
       // the gate: always lit, strongest accent when someone signs in
       const on = active.has("gate");
       const gate = on
         ? `<rect x="${gx - 9}" y="${gy}" width="18" height="${gh}" fill="${th.accent}" fill-opacity="0.22"/><rect x="${gx - 3}" y="${gy}" width="6" height="${gh}" fill="${th.accent}"/>`
         : `<rect x="${gx - 2}" y="${gy}" width="4" height="${gh}" fill="${th.accent}" fill-opacity="0.6"/>`;
-      svgs.push(svgDoc(H_W, H_H, th, back, textLayer(g, 0, oy, H_CW, H_CH, H_FS) + gate + shapes));
+      svgs.push(svgDoc(H_W, H_H, th, back, textLayer(g, 0, oy, H_CW, H_CH, H_FS) + rowSvg + gate + shapes));
     }
     await makeGif(`hero-${th.name}.gif`, H_W, H_H, HFPS, svgs);
   }));
