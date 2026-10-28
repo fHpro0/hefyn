@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <strong>One login for your team's coding agents, and workflows everyone can share.</strong>
+  <strong>One login for your team's agents, and workflows everyone can share.</strong>
 </p>
 
 <p align="center">
@@ -32,13 +32,13 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/hero-dark.gif">
-    <img src="docs/readme/hero-light.gif" alt="Four people sign in through one login. Lena builds a private workflow, shares it with the team, and Tobias and Sofia use it on the same Claude Code team account." width="100%">
+    <img src="docs/readme/hero-light.gif" alt="Four people sign in through one login. Lena builds a private workflow, shares it with the team, and Tobias and Sofia use it on the same Claude Code team account, each in their own private session." width="100%">
   </picture>
 </p>
 
 ## What hefyn is
 
-hefyn gives a whole team one login to standard CLI coding agents (Claude Code, Codex, OpenCode, Pi) in the browser. An admin sets up one team account per agent and connects the tools once; nobody needs their own API key, a separate account or a model choice.
+hefyn gives a whole team one login to standard CLI agents (Claude Code, Codex, OpenCode, Pi) in the browser. An admin sets up one team account per CLI and connects the tools once; nobody needs their own API key, a separate account or a model choice. Sessions stay private to each account: sharing a team account or a workflow never shares anyone's chats, and admins cannot open them in the app.
 
 People work with workflows, not models. A workflow (an Assistant with its instructions and skills) starts private, and whoever built it can share it with the team when it is ready. Each person works in a chat view or the agent's own terminal, and every conversation runs in its own Docker sandbox. hefyn runs no agent of its own: it starts the vendor's CLI and shows what it does.
 

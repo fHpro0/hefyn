@@ -174,7 +174,7 @@ async function efynGrid() {
 
 async function logo() {
   const word = await efynGrid();
-  const TAG = "one login · shared workflows · your team's coding agents";
+  const TAG = "one login · shared workflows · your team's agents";
   const markBottom = L_OY + 9 * M_CH, wy = markBottom - BASE; // efyn baseline sits on the mark's baseline
   const wW = word[0].length * W_CW, L_X = (L_W - (13 * M_CW + GAP + wW)) / 2, wx = L_X + 13 * M_CW + GAP;
   const MAXP = 13 * M_CW + GAP + wW + (wy + word.length * W_CH - L_OY);
@@ -226,7 +226,7 @@ async function logo() {
   }
 }
 
-// ---------- 2. hero: one login, private or shared workflows, one team account per agent ----------
+// ---------- 2. hero: one login, private or shared workflows, one team account per CLI ----------
 // Story (10 s loop, 200 frames): lena sends a workflow through the one gate into her PRIVATE panel, types it,
 // runs it on Claude Code + ERP; she shares it (the row slides up into the team panel); tobias and sofia use it
 // (row counter 1->3, Claude Code's "in use by" 1->3: one team account, three people); the row fades out and the
@@ -265,6 +265,7 @@ function heroBase() {
     box(1, y - 1, 16, y + 1, c);
     put(3, y, n, "fg", c);
     if (!j) put(3 + n.length, y, " · admin", "muted", c);
+    put(1, y + 2, "private sessions", "muted");
     put(16, y, "├", "line", c);
     put(17, y, "──", "line");
   });
@@ -301,13 +302,13 @@ function heroBase() {
   const hint = "pick a workflow, not a model";
   put(mid(hint, 25, 77), 19, hint, "muted");
 
-  // team accounts (one per agent), set up once by the admin
+  // team accounts (one per CLI), set up once by the admin
   put(86, 1, "set up once by anna", "muted");
-  box(86, 2, 118, 16); put(88, 2, " team accounts ", "fg");
+  box(86, 2, 118, 16); put(88, 2, " team accounts · one per CLI ", "fg");
   ["Claude Code", "Codex", "OpenCode", "Pi"].forEach((n, i) => {
     const y = 5 + 3 * i;
     put(88, y, n, "fg", "a" + i); put(88, y + 1, "team account", "muted");
-    if (i) put(106, y, `in use by ${[0, 2, 1, 0][i]}`, "muted");
+    if (i) { const n = [0, 2, 1, 0][i]; put(100, y, `${n} private session${n == 1 ? "" : "s"}`, "muted"); }
   });
   box(86, 18, 118, 21); put(88, 18, " tools ", "fg");
   ["ERP", "Wiki"].forEach((n, i) => put(88, 19 + i, n, "fg", "t" + i));
@@ -321,7 +322,7 @@ function heroBase() {
   for (const y of [5, 8, 11, 14, 19, 20]) { put(RB + 1, y, "──", "line"); put(RB + 3, y, "►", "line"); }
 
   // footer, spread out
-  const caps = ["sign in once", "private, or shared with the team", "one team account per agent, no model picking"];
+  const caps = ["sign in once, sessions private", "workflows private or shared with the team", "one team account per CLI, no model picking"];
   const x3 = 119 - caps[2].length, x2 = Math.floor((1 + caps[0].length + x3 - caps[1].length) / 2);
   [1, x2, x3].forEach((x, i) => put(x, 24, caps[i], "muted"));
 
@@ -407,7 +408,8 @@ function hero() {
         [...s].forEach((ch, i) => { if (ch !== " ") g[y][x + i] = { ch, color: c }; });
       // Claude Code's counter: one team account, many people (flashes on each tick, eases back at the end)
       const ups = CL_TICKS.filter((t) => f >= t).length, downs = CL_DOWN.filter((t) => f >= t).length;
-      put(106, 5, `in use by ${ups - downs}`, CL_TICKS.some((t) => f >= t && f < t + 6) ? th.accent : th.muted);
+      const cn = ups - downs;
+      put(100, 5, `${cn} private session${cn == 1 ? "" : "s"}`,CL_TICKS.some((t) => f >= t && f < t + 6) ? th.accent : th.muted);
 
       // the new workflow row: typed in privately, shared (slides up), counted, faded out. Drawn on its own
       // layer at a fractional y so the slide is smooth.
