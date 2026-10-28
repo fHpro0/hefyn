@@ -1,0 +1,12 @@
+[
+  {
+    "role": "senior-auditor",
+    "agent": "claude-acp",
+    "edit": false
+  },
+  {
+    "role": "quality-reviewer",
+    "agent": "claude-acp",
+    "edit": false
+  }
+]

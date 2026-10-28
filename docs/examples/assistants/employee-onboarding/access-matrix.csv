@@ -1,0 +1,23 @@
+role,system,access_level,standard,approver,note
+all,Google Workspace,user,yes,IT,mailbox and calendar
+all,Slack,member,yes,IT,default channels #general #announcements
+all,1Password,member,yes,IT,personal vault and team vault of the department
+all,Learning portal,learner,yes,HR,security training is mandatory in week 1
+all,Expense tool,submitter,yes,Finance,
+software-engineer,GitHub,write on team repositories,yes,Engineering manager,no admin; org owner never
+software-engineer,Jira,user,yes,Engineering manager,
+software-engineer,AWS,read-only on dev account,yes,Engineering manager,IAM role via SSO
+software-engineer,AWS,deploy rights on dev account,no,Engineering manager,after security certificate and first merged change
+software-engineer,AWS,any access to production,no,CTO,never on day one
+software-engineer,Sentry,member,yes,Engineering manager,
+software-engineer,Datadog,read-only,yes,Engineering manager,
+sales-account-executive,Salesforce,sales user,yes,Head of sales,own accounts and team pipeline view
+sales-account-executive,HubSpot,marketing read-only,yes,Head of sales,
+sales-account-executive,Gong,user,yes,Head of sales,call recordings of own calls
+sales-account-executive,DocuSign,sender,no,Head of sales,after 30 days; contract templates only
+sales-account-executive,Pricing admin,none,no,CFO,never part of this process
+finance-accountant,DATEV Unternehmen online,booking,yes,Head of finance,no payment release
+finance-accountant,Banking portal,view only,no,CFO,after probation; four-eyes rule applies
+finance-accountant,Banking portal,payment release,no,CFO,never part of this process
+finance-accountant,Expense tool,approver,no,Head of finance,after 30 days
+finance-accountant,SAP supplier master data,read-only,yes,Head of finance,

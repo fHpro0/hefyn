@@ -1,128 +1,155 @@
 # Self-hosting hefyn
 
+> hefyn is a proof of concept. Expect breaking changes between versions, with no migration promise. Back up before every upgrade (see "Backups and upgrades").
+
 ## Quick start (Docker)
 
+You need Docker with Compose v2 and [Bun](https://bun.sh) (only for `bun run init`).
+
 ```sh
-bun run init                       # creates .env with random secrets, never overwrites real values
-docker compose --profile build build   # once: the shell-sandbox image
+bun run init                           # creates .env with random secrets; never overwrites real values
+docker compose --profile build build   # builds the shell-sandbox image (required, see below)
 docker compose up --build
 ```
 
-Open http://localhost:3000/setup. The first account becomes the Admin; sign-ups are closed after that and
-admins add people under **Users**.
+Open http://localhost:3000/setup. The first account becomes the Admin; sign-ups are closed after that and admins add people under **Settings > Users**.
 
-Web, agent, runner and egress refuse to start in production with a missing, placeholder or short (<32 chars)
-`HEFYN_SECRET` / `HEFYN_INTERNAL_TOKEN`. Back up `HEFYN_SECRET`: stored provider keys and sign-ins are
-encrypted with it (AES-256-GCM) and become unreadable without it.
+Then, as Admin, under **Settings > Agents & keys**: install a coding agent (the default chat agent is Claude Code) and connect the API key it runs on.
 
-The compose project is named `hefyn`. Volumes from runs under an older project name (`agent_*`) are not
-picked up; remove them with `docker compose -p agent down -v`.
+**The sandbox image is required.** Every chat is a hosted CLI agent that runs in a per-conversation container started from the `hefyn-sandbox` image. The image is not pulled; it is built by the `build` profile above. Without it no chat can start.
 
-## Services
+`.env` (created by `bun run init`, mode 600):
 
-| Service | Role | Network |
+| Variable | Meaning |
+|---|---|
+| `HEFYN_SECRET` | 32+ random characters. Signs sessions and, in the default key mode, is the root of all stored-data encryption. |
+| `HEFYN_INTERNAL_TOKEN` | Shared secret between web, agent, runner and egress. Hex or base64url (it sits inside a proxy URL). |
+| `HEFYN_URL` | The address users open, e.g. `https://hefyn.example.com`. Used for cookies, CSRF checks, passkeys, OAuth redirects and mail links. Default `http://localhost:3000`. |
+| `HEFYN_KEY_MODE` | `server` (default) or `user`. See "Encryption" below. |
+| `HEFYN_TRUSTED_PROXIES` | IPs/CIDRs of your reverse proxy (see below). |
+| `HEFYN_SANDBOX_EGRESS` | `none` (default) or `internet` (see "Shell sandbox"). |
+| `HEFYN_DRAIN_TIMEOUT_MS` | How long a requested agent restart waits for running tasks (default 600000). |
+| `HEFYN_SKILLSMP_API_KEY` | Optional skillsmp.com key (more Hub search quota). |
+
+Compose reads `.env` only for the `${...}` values in `docker-compose.yml`; there is no `env_file`. A variable that file does not mention (for example `HEFYN_MAX_UPLOAD_MB`, default 100, or `HEFYN_USER_QUOTA_MB`, default 1024, see [STORAGE.md](STORAGE.md)) reaches a container only if you add it to that service's `environment`. `.env.example` lists just `HEFYN_SECRET`, `HEFYN_INTERNAL_TOKEN`, `HEFYN_URL` and `HEFYN_DRAIN_TIMEOUT_MS`. Runner and install limits are in [SANDBOX.md](SANDBOX.md).
+
+In production (`NODE_ENV=production`, set by the images) web and agent refuse to start with a missing, `dev-only` or short (< 32 chars) `HEFYN_SECRET` or `HEFYN_INTERNAL_TOKEN`; runner and egress check the token.
+
+The compose project is named `hefyn`. Volumes from runs under an older project name (`agent_*`) are not picked up; remove them with `docker compose -p agent down -v`.
+
+## Services and network
+
+```mermaid
+flowchart LR
+  U["Browser"] -->|":3000"| W["web: auth, /api, UI, /dav"]
+  W -->|"guarded proxy /agents/*"| A["agent: CLI-agent host"]
+  A -->|HTTP_PROXY| E["egress: allowlist proxy"]
+  A --> R["runner: docker.sock"]
+  W --> R
+  R -->|starts| S["sandbox containers (per chat)"]
+  R -->|starts| PW["Playwright containers"]
+  E -->|"internet"| NET(("model, OAuth and MCP hosts"))
+  W -->|"internet (GitHub imports)"| NET
+  PW --> NET
+```
+
+| Service | Role | Networks |
 |---|---|---|
-| `web` | auth, `/api`, UI, guarded proxy to the agent | published on :3000 |
-| `agent` | Flue runtime: agents, conversations, privacy gate | internal only, leaves via `egress` |
-| `redact` | redaction engine (regex, entropy, GLiNER, TypeScript port of warden's), CPU/memory limited, warm across agent restarts | internal only, no internet |
-| `egress` | allowlisting forward proxy for model, OAuth and MCP traffic | internal + internet |
-| `runner` | the only holder of `docker.sock`; starts sandboxes and Playwright | internal |
+| `web` | auth, `/api`, UI, WebDAV, guarded proxy to the agent. The only published service (`:3000`). | `core`, `public` |
+| `agent` | hosts the CLI agents (Claude Code, Codex, OpenCode, Pi) and their sign-in terminals | `core` only; leaves through `egress` |
+| `egress` | forward proxy with a host allowlist derived from `app.db` (connected providers, OAuth token endpoints, MCP hosts) | `core`, `public`, `hefyn-mcp` |
+| `runner` | the only holder of `docker.sock`; starts sandboxes, installer containers and Playwright | `core` |
 
-The `redact` service runs the redaction engine: regex rules, entropy and GLiNER (inference in worker threads; regex, entropy and the hub guard in a worker pool with a hard per-job timeout, `HEFYN_REDACT_WORKERS` default 2, `HEFYN_REDACT_TIMEOUT_MS` default 10000). It is a separate container so the model stays loaded when `agent` restarts and so it has its own limits (`HEFYN_REDACT_CPUS`, default 2; `HEFYN_REDACT_MEMORY`, default 1536m). It has no internet: on first start `web` downloads the GLiNER files (~86 MB, SHA-256 verified) from Hugging Face into the `redact-models` volume, which `redact` mounts read-only. Until they are there `redact` reports GLiNER as `loading` and no model request is sent (fail closed). Agent and web reach it at `HEFYN_REDACT_URL` with the internal token. `HEFYN_REDACT_GLINER=off` (regex and entropy only) additionally needs `HEFYN_ALLOW_NO_GLINER=1` in production.
+`core` is Docker-internal (no route out). `public` and `hefyn-mcp` reach the internet. The runner has the Docker socket, which is root-equivalent on the host: it is reachable only on the internal network, behind the internal token, and starts fixed images with fixed flags. Details and risks: [SANDBOX.md](SANDBOX.md).
 
-Data lives in the `hefyn-data` volume (`HEFYN_DATA_DIR`): `app.db` (auth, roles, profiles, usage, hub,
-connectors), `flue.db` (conversations) and `users/<id>/{files,tmp}`. Web and agent run as uid/gid 1000;
-volumes created by older versions need `docker run --rm -v <volume>:/d busybox chown -R 1000:1000 /d` once.
+Model requests are forwarded as they are. There is no redaction service (removed 2026-10-26): personal data in a chat reaches the provider you connected. An upgrade from a version with the privacy layer drops its leftover tables (`redact_vars`, `redact_audit`) at the first start. The `redact-models` volume and the `HEFYN_REDACT_*` / `HEFYN_GLINER_*` settings are unused; remove them.
 
-## Getting the GLiNER model
+### Ports
 
-The redact service needs two files of [`knowledgator/gliner-pii-small-v1.0`](https://huggingface.co/knowledgator/gliner-pii-small-v1.0)
-(`tokenizer.json` 3.6 MB and `onnx/model_quint8.onnx` 83 MB). Whatever the source, hefyn only uses files whose size and SHA-256
-match the pinned list in `src/server/redact/models.ts`; anything else is rejected. `HEFYN_GLINER_SOURCE` chooses the source
-(default `huggingface`). The redact service never downloads anything: it has no internet and only reads and verifies the files.
-The Models page (Privacy) shows the source and the state (`ready`, `missing`, `downloading`, `invalid`, `error`); the same is in
-`GET /api/runtime` under `privacy` (`glinerSource`, `glinerState`, `glinerDetail`, `glinerHost`).
-
-| Source | Who fetches | Network use |
+| Port | Where | What |
 |---|---|---|
-| `huggingface` | `web` on first start, into the `redact-models` volume | Hugging Face (redirects to its CDN, which is AWS-hosted) |
-| `mirror` | `web`, from `HEFYN_GLINER_BASE_URL` | only that https host; a redirect to another host is refused |
-| `image` | nobody at runtime; baked at build time into `/opt/hefyn/models/gliner` | none at runtime |
-| `local` | nobody; files in `HEFYN_GLINER_DIR` (default `models/gliner` in the data volume) or uploaded in the UI | none |
+| 3000 | `web`, published on all interfaces | UI, API, `/dav`. Put a reverse proxy in front for real use. |
+| 127.0.0.1:1455 | `web`, published on loopback | Left over from "Sign in with ChatGPT": the sign-in flow is closed (see `connectors.oauth.start`), nothing listens on it in this version. It is only reachable from the Docker host anyway; you can remove the mapping from `docker-compose.yml`. |
+| 4321 | dev stack only | Console with hot reload. |
 
-**Mirror.** Serve the same relative layout over https from any static file server, an object store, or a Nextcloud public share
-(direct-download links; the base URL must resolve `<base>/tokenizer.json` and `<base>/onnx/model_quint8.onnx`):
+Nothing else is published. A firewall should allow only your proxy (or 443) to reach 3000.
 
-```
-https://files.example.com/gliner/tokenizer.json
-https://files.example.com/gliner/onnx/model_quint8.onnx
-```
+### Data
 
-Set `HEFYN_GLINER_SOURCE=mirror` and `HEFYN_GLINER_BASE_URL=https://files.example.com/gliner`. Plain http is refused. A redirect is only
-followed within the same host. A file with a different hash is discarded, so the mirror does not need to be trusted. To fill a mirror,
-or to carry the files to an offline machine, run once on a machine with internet (add the mirror URL as the second argument to fetch from a mirror):
+Data lives in two named volumes (with the project prefix, e.g. `hefyn_hefyn-data`):
 
-```
-node scripts/gliner-fetch.ts ./gliner            # downloads from Hugging Face and verifies; bun works too
-```
-
-**Baked into the image.** `docker compose build --build-arg HEFYN_GLINER_BAKE=1` (or `HEFYN_GLINER_BAKE=1` in `.env`) downloads and verifies
-the files while building (add `--build-arg HEFYN_GLINER_BASE_URL=https://...` to build from a mirror) and stores them read-only in the image;
-that image then defaults to `HEFYN_GLINER_SOURCE=image` and `web` makes no model request at all. The default image does not contain the
-model and stays small (about 86 MB less).
-
-**Local files / upload.** `HEFYN_GLINER_SOURCE=local`: copy the files into the `redact-models` volume (`models/gliner/`) or point
-`HEFYN_GLINER_DIR` at a directory, for example a bind mount in a `docker-compose.override.yml`
-(`redact: { volumes: !override ["/srv/hefyn/gliner:/models:ro"] }`, `web` likewise read-write if you want uploads, and `HEFYN_GLINER_DIR=/models` in `.env`).
-Admins (permission `models.manage`) can also upload them in Models, Privacy, or with
-`POST /api/settings/privacy/gliner/upload` (multipart with the two files, or one `.tar` / `.zip`; at most 300 MB). Each file must have the exact
-pinned size and SHA-256, any other file in the upload is rejected (macOS/Windows junk files are ignored), names with `..` or absolute paths are
-refused, and files are stored atomically; the target path never comes from the upload. The redact service notices new files within seconds.
-
-**Licence.** The model card of the pinned repository declares `license: apache-2.0` (not gated; developed by Wordcab and Knowledgator).
-Apache-2.0 allows redistribution, including on a mirror or inside an image, provided you pass on the licence text and the attribution; keep a
-copy of the [licence](https://www.apache.org/licenses/LICENSE-2.0) and the model card with whatever you redistribute and say that the ONNX
-file is the quantized export published in that repository. hefyn does this for you: `scripts/gliner-fetch.ts` (and therefore the baked image,
-in `/opt/hefyn/models/gliner/`) writes `NOTICE.txt` (model, repo URL, pinned revision, authors, licence) and `LICENSE-Apache-2.0.txt` next to the
-model files and also fetches the model card `README.md` (pinned by SHA-256; the repo has no separate LICENSE file; if the card cannot be fetched
-the NOTICE and licence text are still written). A download by `web` writes the two notice files too. Uploads may include any of these three
-files (verified byte for byte) but never need to. If you mirror the files, put the same three next to them. The card does not describe the training data's own licensing; this is not legal
-advice, so check it for your use. hefyn itself does not ship the model.
+- `hefyn-data` (`HEFYN_DATA_DIR=/data`): `app.db` (auth, roles, profiles, usage, hub, connectors, encrypted chat events), `users/<id>/{files,tmp}` (the user's files and per-chat scratch), and a leftover `flue.db` from the retired chat that nothing reads. Web and agent run as uid/gid 1000; volumes created by older versions need `docker run --rm -v <volume>:/d busybox chown -R 1000:1000 /d` once.
+- `hefyn-agents`: the CLI agents an admin installed (the runner mounts it read-only; installer containers write it).
 
 ## Reverse proxy and client IPs
 
-hefyn uses the socket peer as the client IP for rate limiting. Behind a reverse proxy, set
-`HEFYN_TRUSTED_PROXIES` (comma-separated IPs or IPv4 CIDRs of your proxies); only then are `X-Forwarded-For`
-/ `X-Real-IP` believed. Without it those headers are stripped. In plain Docker every user appears as the bridge
-gateway and shares one rate-limit bucket, so put a proxy (Caddy, nginx, Traefik) in front for real use.
+hefyn uses the socket peer as the client IP for rate limiting. Behind a reverse proxy, set `HEFYN_TRUSTED_PROXIES` (comma-separated IPs or IPv4 CIDRs of your proxies); only then are `X-Forwarded-For` / `X-Real-IP` believed. Without it those headers are stripped, and in plain Docker every user appears as the bridge gateway and shares one rate-limit bucket. Use Caddy, nginx or Traefik, terminate TLS there, and set `HEFYN_URL` to the public https address.
+
+Pass through: `Host` unchanged, `X-Forwarded-For`, `X-Forwarded-Proto`, streaming responses without buffering (chat events and terminals are server-sent events).
+
+**WebDAV (`/dav/`)**: forward it to `web` like `/api`, with every method (not just GET/POST): `OPTIONS PROPFIND PROPPATCH GET HEAD PUT DELETE MKCOL MOVE COPY LOCK UNLOCK`, and pass `Host` through unchanged (MOVE/COPY compare the `Destination` header's host with it). Do not cap request bodies below `HEFYN_MAX_UPLOAD_MB`, and turn off request buffering for uploads if your proxy allows it. Traefik and Caddy forward all methods by default; nginx needs no special `dav_methods` because it only proxies. Clients send HTTP Basic credentials (account email plus an app password), so `/dav` answers 403 unless the request came over https (the proxy must send `X-Forwarded-Proto: https`; plain http works only for `localhost`). Windows Explorer refuses WebDAV over plain http by default, so use a real certificate. Failed sign-ins are limited to 10 a minute per client IP and email.
 
 ## Shell sandbox
 
-People with the `sandbox.shell` permission (Admin by default) get bash, grep and glob in a per-conversation
-container; everyone else gets file-only tools. Design, limits and risks: [SANDBOX.md](SANDBOX.md).
+Every chat runs its agent in a container. People with the `sandbox.shell` permission may also use bash, grep and glob there and open the Files page. `sandbox.shell` is a **Worker default** (and Admin has it); a role without it gets no raw agent access and no Files page, only the Assistants that team admins grant an agent to. Design, limits and risks: [SANDBOX.md](SANDBOX.md).
 
-**Egress (required on a real server):** sandboxes can reach the internet by default
-(`HEFYN_SANDBOX_EGRESS=internet`). Install the firewall rules so they can't reach the host, your LAN or cloud
-metadata: `sudo scripts/sandbox-egress-rules.sh` (after the first sandbox started, and again if the
-`hefyn-sandbox` network is recreated). `HEFYN_SANDBOX_EGRESS=none` gives sandboxes no network at all.
+**Egress:** sandboxes have no network at all by default (`HEFYN_SANDBOX_EGRESS=none`), so a prompt-injected model cannot send the files in a sandbox to a host of its choice. `HEFYN_SANDBOX_EGRESS=internet` opts in (for `git`, `npm`, `pip`). Then install the firewall rules so sandboxes cannot reach the host, your LAN or cloud metadata:
 
-The browser connector (Playwright) is available to people with `mcp.run_managed`. Screenshots are removed
-before anything is sent to a model unless an admin allows unredacted images.
+```sh
+sudo scripts/sandbox-egress-rules.sh
+```
+
+Run it after the first sandbox has started (the runner creates the `hefyn-sandbox` network lazily), and again if that network is recreated. It uses `iptables` and `DOCKER-USER`; IPv6 is described at the end of the script. The rules are not persistent across reboots unless you save them with your distribution's tooling.
+
+The browser connector (Playwright) always has internet access, in its own container; it is off until a user enables it and needs `mcp.run_managed`.
+
+## Mail
+
+hefyn can send password-reset and invite mails through one SMTP server (`src/server/channels.ts`; the sending happens in the web process, which needs outbound access to your SMTP host). **This build has no screen or API to configure it**: Settings > Mail and the `mail.*` API are gone, and the `channels.manage` permission has nothing to open. Until it returns, the sign-in page does not offer "Forgot your password?" and admins create accounts with a temporary password (**Users > Add a person**); the user must choose their own password at first sign-in.
+
+## Two-factor and passkeys
+
+Everyone can turn on an authenticator app (TOTP, with backup codes) and register passkeys under **Settings > Security**. Admins can require two-factor for admins or for everyone (Settings > Users); people who are required are sent to the Security page until it is on, and an admin can reset someone's two-factor if they lose their device. Passkeys are an extra way to sign in; "required" means an authenticator app.
+
+Passkeys are bound to the exact address in the browser. Set `HEFYN_URL` to that origin; WebAuthn needs https, except on `localhost`. If the address changes, existing passkeys stop working.
+
+## Encryption
+
+`HEFYN_KEY_MODE` defaults to `server`: chat titles, chat events and stored secrets are encrypted in the database, and the keys are wrapped with a key derived from `HEFYN_SECRET`. That protects a stolen database or backup **without** `.env`. Whoever holds `.env` and the database can read everything, and an admin of the server can read everything. Do not keep `.env` next to your backups.
+
+`user` mode (zero-access: keys wrapped by each user's password, recovery keys) exists in the server code, but its unlock screens moved to `old/`, so do not set it: users would be locked out. Details, limits and what is and is not encrypted: [ENCRYPTION.md](ENCRYPTION.md).
+
+Losing `HEFYN_SECRET` makes the stored data unreadable in server mode. Do not change it on a running instance.
+
+## Backups and upgrades
+
+Back up, together and while stopped (or from a volume snapshot, as SQLite uses WAL):
+
+- the `hefyn-data` volume (everything of your users);
+- `hefyn-agents` (can be rebuilt by reinstalling the agents, but saves time);
+- `.env` (`HEFYN_SECRET` is needed to read the data), stored apart from the data backup.
+
+```sh
+docker compose stop
+docker run --rm -v hefyn_hefyn-data:/d -v "$PWD":/b busybox tar czf /b/hefyn-data.tgz -C /d .
+docker compose start
+```
+
+(The volume name is `<project>_hefyn-data`; check with `docker volume ls`.)
+
+Upgrading: take the backup, `git pull`, rebuild the sandbox image if `services/sandbox-image` changed (`docker compose --profile build build`), then `docker compose up --build`. There is no versioned migration plan: the database is upgraded in place at start, and a version may change or drop features. Read the commit log before upgrading, and keep the backup until you have checked the new version.
 
 ## Development
 
-- **Docker with hot reload:** `bun run dev:docker`, open http://localhost:4321. Changes in `src/`, `web/src/`,
-  `assets/` and `profiles/` reload in place; dependency or config changes rebuild only the affected service.
-  GLiNER is off in dev (`HEFYN_REDACT_GLINER=on` turns it on, web downloads ~86 MB into the dev data volume).
-- **Without Docker:** `bun install && bun run dev` (agent on :5174, web API on :5173, Astro on :4321). `bun run dev` also starts the redact
-  service (`node src/redact-server.ts`, :8787; `HEFYN_REDACT_GLINER=off` skips the model, `on` downloads it to `data/models/gliner`).
-  The server runs on Node ≥ 22.19 (Bun lacks `node:sqlite`).
-- **Checks:** `bun run typecheck`, `bun run test` (builds, then `node --test`; a fake model upstream, no API keys
-  needed; the sandbox tests use Docker when available). The GLiNER half of `test/redact-parity.test.ts` is skipped unless the model files are present (`HEFYN_REDACT_MODEL_DIR` or `data/models/gliner`).
+- **Docker with hot reload:** `bun run dev:docker`, open http://localhost:4321. Changes in `src/`, `web/src/`, `assets/` and `profiles/` reload in place; dependency or config changes rebuild only the affected service. The dev stack has its own data volume; if production runs on the same machine, add `-p hefyn-dev` to the compose command so the project names do not collide.
+- **Without Docker:** `bun install && bun run dev` (agent on :5174, web API on :5173, console dev server with HMR on :4321). Everything runs on Bun >= 1.4.4 (pinned: `package.json` `engines`/`packageManager`, every Dockerfile `FROM oven/bun:1.4.4`; 1.4 has `node:sqlite`). The servers run the TypeScript sources directly, there is no server build; only the console is built (`bun run build` -> `dist/web`). Production commands: agent `bun src/agent.ts` (`bun run start`), web `bun src/web.ts` (`bun run start:web`).
+- **Checks:** `bun run typecheck`, `bun run test` (every `test/*.test.ts` in its own `bun test` process, four at a time, one summary; `bun run test e2e hub` runs the files whose name contains one of the words, `HEFYN_TEST_JOBS` sets the parallelism; a fake model upstream, no API keys needed; the sandbox tests use Docker when available).
 
 ## Further reading
 
 - [DESIGN.md](DESIGN.md): architecture and decisions
 - [API.md](API.md): HTTP API
+- [ENCRYPTION.md](ENCRYPTION.md): keys, what is encrypted, limits
+- [SANDBOX.md](SANDBOX.md): shell sandbox and runner
 - [HUB.md](HUB.md), [HUB-API.md](HUB-API.md): skill hub · [STORAGE.md](STORAGE.md): per-user storage
 - [UI-DESIGN.md](UI-DESIGN.md): interface direction

@@ -1,0 +1,13 @@
+control,title,theme,owner,risk,population_hint,evidence_to_request
+A.5.15,Access control,Organizational,Head of IT Operations,high,user accounts with access to the ERP and WMS,access control policy; user list with roles; last access review record
+A.5.18,Access rights,Organizational,Head of IT Operations,high,joiner/mover/leaver tickets in the period,JML tickets; HR leaver list; account disable log
+A.5.19,Information security in supplier relationships,Organizational,Procurement Lead,medium,active suppliers with data access,supplier register; supplier security assessments; contracts with security clauses
+A.5.24,Information security incident management planning,Organizational,CISO,medium,incident tickets in the period,incident procedure; incident log; post-incident reviews
+A.5.30,ICT readiness for business continuity,Organizational,Head of IT Operations,medium,critical services with a recovery plan,BCP; last restore and failover test records
+A.6.3,Information security awareness and training,People,HR Business Partner,low,employees,training plan; completion report; phishing exercise results
+A.7.2,Physical entry,Physical,Facility Manager,low,badge holders at the Hamburg warehouse,badge list; visitor log; door access review
+A.8.2,Privileged access rights,Technological,Head of IT Operations,high,privileged accounts,privileged account list; approval records; PAM session logs
+A.8.8,Management of technical vulnerabilities,Technological,Security Engineer,high,critical and high findings in the period,scan reports; patch SLA report; exceptions register
+A.8.13,Information backup,Technological,Head of IT Operations,medium,backup jobs for production systems,backup policy; job report; restore test records
+A.8.15,Logging,Technological,Security Engineer,medium,log sources in scope,logging standard; SIEM source list; retention configuration
+A.8.32,Change management,Technological,Release Manager,high,production changes in the period,change policy; change tickets; emergency change list

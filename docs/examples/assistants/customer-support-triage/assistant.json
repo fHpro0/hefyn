@@ -1,0 +1,6 @@
+{
+  "name": "Customer support triage",
+  "description": "Sorts inbound tickets by topic, language and priority, routes them to the right team and drafts replies in the customer's language.",
+  "icon": "LifeBuoy",
+  "agent": "claude-acp"
+}

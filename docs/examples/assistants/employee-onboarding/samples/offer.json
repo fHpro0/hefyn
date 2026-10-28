@@ -1,0 +1,14 @@
+{
+  "name": "Lena Hofmann",
+  "role": "software-engineer",
+  "start_date": "2026-11-02",
+  "location": "Hamburg",
+  "manager": "Tobias Wendt",
+  "buddy": "Sarah Okafor",
+  "language": "de",
+  "private_email": "lena.hofmann@mail.example",
+  "equipment": "MacBook Pro 14",
+  "contract": {"type": "permanent", "weekly_hours": 40, "probation_months": 6},
+  "signed": true,
+  "signed_date": "2026-10-12"
+}

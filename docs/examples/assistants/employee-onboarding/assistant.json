@@ -1,0 +1,6 @@
+{
+  "name": "Employee onboarding",
+  "description": "Turns a signed offer into a 30/60/90-day plan, a least-privilege IT access request, a welcome email and a first-day schedule.",
+  "icon": "UserPlus",
+  "agent": "claude-acp"
+}

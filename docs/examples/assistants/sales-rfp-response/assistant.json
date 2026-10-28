@@ -1,0 +1,6 @@
+{
+  "name": "RFP and security questionnaire response",
+  "description": "Answers customer RFPs and security questionnaires only from the approved answer library, marks stale answers and never invents compliance claims.",
+  "icon": "ClipboardCheck",
+  "agent": "claude-acp"
+}

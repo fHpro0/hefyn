@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "title": "Scrum sprints",
+  "start": "backlog-refinement",
+  "stages": [
+    { "id": "backlog-refinement", "title": "Backlog refinement", "by": "agent", "does": "Run the INVEST check and fix the flagged stories with the product owner's intent." },
+    { "id": "po-review-backlog", "title": "Product owner reviews the backlog", "by": "person", "does": "The product owner approves the refined backlog or asks for changes." },
+    { "id": "sprint-planning", "title": "Sprint planning", "by": "script:backlog/plan.py", "does": "Pick stories under the team's capacity, in priority order." },
+    { "id": "implement-story", "title": "Implement one story", "by": "helper:developer", "each": "stories", "does": "The developer implements the current story as a change set." },
+    { "id": "code-review", "title": "Code review", "by": "helper:reviewer", "does": "The reviewer checks the change set against the definition of done." },
+    { "id": "acceptance", "title": "Product owner acceptance", "by": "person", "does": "The product owner accepts or rejects the story against its acceptance criteria." },
+    { "id": "next-story", "title": "Next story", "by": "agent", "does": "Move to the next story or end the sprint's work." },
+    { "id": "carry-over", "title": "Carry the story over", "by": "agent", "does": "Move the story back to the backlog with the reason." },
+    { "id": "sprint-review", "title": "Sprint review", "by": "agent", "does": "Demo notes and sprint metrics." },
+    { "id": "retrospective", "title": "Retrospective", "by": "agent", "does": "What to change next sprint, based on the loops that happened." },
+    { "id": "next-sprint-decision", "title": "Another sprint or release", "by": "person", "does": "The product owner decides whether to plan another sprint or release." },
+    { "id": "release", "title": "Release notes", "by": "agent", "end": true, "does": "Write the release notes from the accepted stories." }
+  ],
+  "next": [
+    { "from": "backlog-refinement", "to": "po-review-backlog" },
+    { "from": "po-review-backlog", "to": "sprint-planning" },
+    { "from": "po-review-backlog", "when": "changes requested", "to": "backlog-refinement", "max": 2, "then": "sprint-planning" },
+    { "from": "sprint-planning", "to": "implement-story" },
+    { "from": "implement-story", "to": "code-review" },
+    { "from": "code-review", "to": "acceptance" },
+    { "from": "code-review", "when": "changes requested", "to": "implement-story", "max": 3, "then": "carry-over" },
+    { "from": "acceptance", "to": "next-story" },
+    { "from": "acceptance", "when": "rejected", "to": "implement-story", "max": 2, "then": "carry-over" },
+    { "from": "next-story", "when": "next item", "to": "implement-story" },
+    { "from": "next-story", "when": "all items done", "to": "sprint-review" },
+    { "from": "carry-over", "to": "next-story" },
+    { "from": "sprint-review", "to": "retrospective" },
+    { "from": "retrospective", "to": "next-sprint-decision" },
+    { "from": "next-sprint-decision", "when": "another sprint", "to": "backlog-refinement", "max": 4, "then": "release" },
+    { "from": "next-sprint-decision", "when": "release", "to": "release" }
+  ]
+}

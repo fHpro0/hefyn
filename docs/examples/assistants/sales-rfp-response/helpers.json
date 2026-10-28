@@ -1,0 +1,12 @@
+[
+  {
+    "role": "security-sme",
+    "agent": "claude-acp",
+    "edit": false
+  },
+  {
+    "role": "writer",
+    "agent": "claude-acp",
+    "edit": true
+  }
+]

@@ -1,0 +1,6 @@
+{
+  "name": "ISO 27001 internal audit",
+  "description": "Runs an ISO/IEC 27001 internal audit as a looping process: plan, test controls one by one with sampling, peer-reviewed findings, management response, quality review and final report.",
+  "icon": "ShieldCheck",
+  "agent": "claude-acp"
+}

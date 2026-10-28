@@ -1,0 +1,18 @@
+[
+  {"file": "inbox/rechnung-5501.pdf", "invoice_no": "INV-2026-5501", "supplier_id": "S100", "date": "2026-10-05", "currency": "EUR", "po_number": "PO-2026-0412", "iban": "DE89370400440532013000",
+   "lines": [{"po_line": 1, "qty": 12, "unit_price": 289.00}, {"po_line": 2, "qty": 10, "unit_price": 449.00}], "net": 7958.00, "vat": 1512.02, "gross": 9470.02},
+  {"file": "inbox/kuehne-88213.pdf", "invoice_no": "INV-88213", "supplier_id": "S101", "date": "2026-10-06", "currency": "EUR", "po_number": "PO-2026-0418", "iban": "DE02120300000000202051",
+   "lines": [{"po_line": 1, "qty": 20, "unit_price": 185.00}], "net": 3700.00, "vat": 703.00, "gross": 4403.00},
+  {"file": "inbox/cloudwerk-731.pdf", "invoice_no": "INV-0000731", "supplier_id": "S102", "date": "2026-10-27", "currency": "EUR", "po_number": "PO-2026-0423", "iban": "DE75512108001245126199",
+   "lines": [{"po_line": 1, "qty": 1, "unit_price": 4200.00}, {"po_line": 2, "qty": 2, "unit_price": 380.00}], "net": 4960.00, "vat": 942.40, "gross": 5902.40},
+  {"file": "inbox/kuehne-88213-zweitschrift.pdf", "invoice_no": "INV-88213", "supplier_id": "S101", "date": "2026-10-06", "currency": "EUR", "po_number": "PO-2026-0418", "iban": "DE02120300000000202051",
+   "lines": [{"po_line": 1, "qty": 20, "unit_price": 185.00}], "net": 3700.00, "vat": 703.00, "gross": 4403.00},
+  {"file": "inbox/maier-77120.jpg", "invoice_no": "INV-77120", "supplier_id": "S103", "date": "2026-10-09", "currency": "EUR", "po_number": "PO-2026-0431", "iban": "DE44500105175407324931",
+   "lines": [{"po_line": 1, "qty": 30, "unit_price": 119.50}, {"po_line": 2, "qty": 60, "unit_price": 14.90}], "net": 4479.00, "vat": 851.01, "gross": 5330.01},
+  {"file": "inbox/printfix-118.pdf", "invoice_no": "INV-2026-118", "supplier_id": "S105", "date": "2026-10-13", "currency": "EUR", "po_number": null, "iban": "DE12500105170648489890",
+   "lines": [{"po_line": 1, "qty": 15, "unit_price": 96.00}], "net": 1440.00, "vat": 273.60, "gross": 1713.60},
+  {"file": "inbox/rechnung-5502.pdf", "invoice_no": "INV-2026-5502", "supplier_id": "S100", "date": "2026-10-15", "currency": "EUR", "po_number": "PO-2026-0440", "iban": "DE89370400440532013999",
+   "lines": [{"po_line": 1, "qty": 100, "unit_price": 21.40}], "net": 2140.00, "vat": 406.60, "gross": 2546.60},
+  {"file": "inbox/cloudwerk-744.pdf", "invoice_no": "INV-0000744", "supplier_id": "S102", "date": "2026-10-20", "currency": "EUR", "po_number": "PO-2026-0452", "iban": "DE75512108001245126199",
+   "lines": [{"po_line": 1, "qty": 1, "unit_price": 18500.00}], "net": 18500.00, "vat": 3515.00, "gross": 22015.00}
+]

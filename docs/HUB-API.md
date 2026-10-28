@@ -1,13 +1,14 @@
-# Hub API contract (v1) — shared by backend and UI
+# Hub API contract
 
-All under `/api/hub`, session required. Permissions: hub.install, hub.publish, hub.approve, profiles.edit_team.
+The console's own, session-bound endpoints; no external client calls them. They are the `hub.*` tRPC procedures (`src/server/routers/hub.ts`, `docs/API.md`). All need a session. No console page calls them since the Hub page moved to `old/` (2026-10-27); the Skills page and Add agent use `hub.ts` directly (`docs/HUB.md`). Permissions: `hub.install`, `hub.publish`, `hub.approve`, `profiles.edit_team`, `modules.manage`.
 
-Package
 ```ts
-type Kind = 'skill' | 'agent' | 'mcp' | 'bundle';
+type Kind = 'skill' | 'agent' | 'mcp' | 'bundle' | 'module' | 'assistant';
+// module: carries hefyn.module.json (docs/MODULES.md), installed by src/modules/installed.ts, needs modules.manage.
+// assistant: a user's Assistant shared for review (src/server/assistant-share.ts); visible to its owner and reviewers only, never installable; approving it creates the team copy.
 interface Pkg {
   id: string; kind: Kind; name: string; description: string; version: string; hash: string;
-  source: { type: 'ui' | 'git' | 'marketplace' | 'mcp-registry'; url?: string; ref?: string };
+  source: { type: 'ui' | 'git' | 'marketplace' | 'mcp-registry'; url?: string; ref?: string };   // git = GitHub or GitLab
   visibility: 'private' | 'team';
   status: 'draft' | 'pending' | 'approved' | 'rejected'; rejectReason?: string;
   owner: { id: string; name: string };
@@ -18,38 +19,34 @@ interface Pkg {
 }
 ```
 
-| Method | Path | Body / query | Returns | Permission |
-|---|---|---|---|---|
-| GET | /packages | ?q=&kind=&status=&mine=1 | Pkg[] (team-approved + own) | any |
-| GET | /packages/:id | | Pkg & { manifest: object; files: {path,size}[]; readme?: string } | can see |
-| GET | /packages/:id/file | ?path= | text/plain (no HTML) | can see |
-| POST | /packages | skill: {kind,name,description,instructions,files?:{path,content}[]} · agent: {kind,name,description,instructions,model?,skills?:string[]} · mcp: {kind,name,url,transport,auth:'none'\|'bearer'\|'oauth',storage?:true} | Pkg (draft, private) | hub.install |
-| PATCH | /packages/:id | same fields | Pkg (new version → back to draft/pending) | owner |
-| DELETE | /packages/:id | | 204 | owner or hub.approve |
-| POST | /import | {url, ref?} (git URL: SKILL.md dirs, `.claude-plugin/plugin.json`, `agents/*.md`, `.mcp.json`, or a `marketplace.json`) | Pkg[] (private drafts) | hub.install |
-| GET | /registry/mcp | ?q= (official MCP Registry search) | {name,description,url,transport,repository?}[] | hub.install |
-| POST | /registry/mcp/import | {name} | Pkg | hub.install |
-| POST | /packages/:id/publish | | Pkg (status pending; approved directly if caller has hub.approve) | hub.publish |
-| POST | /packages/:id/approve | | Pkg | hub.approve |
-| POST | /packages/:id/reject | {reason} | Pkg | hub.approve |
-| POST | /packages/:id/install | {target:'me'\|'team'} | Pkg | hub.install (+ profiles.edit_team for team) |
-| DELETE | /packages/:id/install | ?target=me\|team | Pkg | same |
-| GET | /installed | | {me: Pkg[]; team: Pkg[]} | any |
-| GET | /review | | Pkg[] (pending) | hub.approve |
+| Procedure | Input | Returns | Permission |
+|---|---|---|---|
+| `hub.list` (query) | `{q?, kind?, status?, mine?: boolean}` | `Pkg[]` (team-approved and own; reviewers also see pending team packages) | any |
+| `hub.get` | `{id}` | `Pkg & { manifest: object; files: {path,size}[]; readme?: string }` | can see |
+| `hub.file` | `{id, path}` | file text | can see |
+| `hub.create` (mutation) | skill: `{kind,name,description,instructions,files?:{path,content}[]}` · agent: `{kind,name,description,instructions,model?,thinking?,skills?:string[]}` · mcp: `{kind,name,url,transport,auth:'none'\|'bearer'\|'oauth',storage?:true}` · module: `{kind,manifest}` | `Pkg` (draft, private) | `hub.install` |
+| `hub.update` | `{id, body}` (same fields) | `Pkg` (a new version goes back to draft or pending) | owner |
+| `hub.delete` | `{id}` | `{ok}` | owner or `hub.approve` |
+| `hub.import` | `{url, ref?}`: `https://github.com/o/r[/tree/ref/path]`, a GitLab project `https://<host>/g/p[/-/tree/ref/path]` (gitlab.com or self-hosted, public, https), or a `https://skillsmp.com/skills/<slug>` page (resolved to its GitHub URL). Contents: SKILL.md dirs, `.claude-plugin/plugin.json`, `agents/*.md`, `.mcp.json`, or a `marketplace.json` | `Pkg[]` (private drafts) | `hub.install` |
+| `hub.skillsmpSearch` (query) | `{q, page?}` (cached 10 min; fails with a "limit reached" message when the quota is used up) | `{skills: {id,name,author,description,stars,updatedAt,githubUrl,skillUrl}[], page, hasNext}` | `hub.install` |
+| `hub.registrySearch` (query) | `{q}` (official MCP Registry) | `{name,description,url,transport,repository?}[]` | `hub.install` |
+| `hub.registryImport` | `{name}` | `Pkg` | `hub.install` |
+| `hub.publish` | `{id}` | `Pkg` (pending; approved at once if the caller has `hub.approve`) | `hub.publish` |
+| `hub.approve` | `{id}` | `Pkg` | `hub.approve` |
+| `hub.reject` | `{id, reason?}` | `Pkg` | `hub.approve` |
+| `hub.install` | `{id, target:'me'\|'team'}` | `Pkg` | `hub.install` (and `profiles.edit_team` for `team`; `modules.manage` for a module) |
+| `hub.uninstall` | `{id, target}` | `Pkg` | same |
+| `hub.installed` (query) | none | `{me: Pkg[]; team: Pkg[]}` | any |
+| `hub.review` (query) | none | `Pkg[]` (pending) | `hub.approve` |
 
-Rules: installing requires `approved` (or own private package for target `me`). Every import/create/update runs the
-prompt-injection guard over all text; `guard.flagged` is shown to reviewers, never auto-approved. Plugin `hooks/` and
-`commands/` are ignored (listed in manifest as `ignored`). Files are stored in the DB, served as text only.
-Installed for an agent run = team installs + caller's own installs: skills → `useSkill`, agents → subagents,
-mcp → MCP connections (same auth handling as Connectors).
+Errors are `HubError` (`src/server/hub.ts`) with a status of 400, 403, 404, 409 or 502.
 
-## Clarifications (v1.2)
-- mcp packages may declare `storage: true` ("this server has the filesystem server's tools"); `Pkg.storage` mirrors it and the manifest top level carries it.
-  Installing offers "use as storage" (link to Connectors > Storage); the user marks the installed connector as storage there once signed in. Never automatic.
+## Rules
 
-## Clarifications (v1.1)
-- `GET /packages/:id` → `manifest` holds the editable fields: skill `{instructions}`, agent `{instructions, model?, skills: string[]}`
-  (skill **names**), mcp `{url, transport, auth}`; plus `ignored: string[]` (paths of hooks/commands not installed).
-- MCP packages never store credentials. Installing one creates a per-user entry in Connectors (`/api/connectors/mcp`,
-  `mine: true`, `source: 'hub:<packageId>'`); bearer/OAuth sign-in happens there ("Sign-in needed" until done).
-- No version history endpoint in v1.
+- Installing needs `approved` (or the owner's own private package, target `me`).
+- Every import, create and update runs the prompt-injection guard over all text. `guard.flagged` is shown to reviewers and the package is never auto-approved.
+- Plugin `hooks/` and `commands/` are ignored (listed in `manifest.ignored`). Files are stored in the database and handled as text only.
+- Installing an `mcp` package creates a per-user entry in Connectors (`mine: true`, `source: 'hub:<packageId>'`). Bearer and OAuth sign-in happens there ("Sign-in needed" until done). No credentials are stored by the hub.
+- In `hub.get`, `manifest` holds the editable fields: skill `{instructions}`, agent `{instructions, model?, thinking?, skills: string[]}` (skill names), mcp `{url, transport, auth}`; plus `ignored: string[]`.
+- `storage: true` on an mcp package marks a server with filesystem-style tools. The flag is kept in the manifest, but the "use as storage" step it fed (Settings, Storage add-ons) moved to `old/`. Files connections of kind `mcp` pick the user's own MCP servers instead (`docs/STORAGE.md`).
+- No version-history procedure.

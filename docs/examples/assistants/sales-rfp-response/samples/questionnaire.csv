@@ -1,0 +1,16 @@
+id,section,question
+Q001,Data protection,Is customer data encrypted at rest? Please state the algorithm.
+Q002,Data protection,Is data encrypted in transit? Which TLS versions are supported?
+Q003,Data protection,In which country and region is customer data stored?
+Q004,Data protection,Please list all sub-processors with name and location.
+Q005,Governance,Do you hold an ISO 27001 certificate? Please state the scope and expiry date.
+Q006,Governance,Do you have a SOC 2 Type II report? Please attach it.
+Q007,Governance,Are you TISAX assessed?
+Q008,Security,Do you support SSO and multi-factor authentication?
+Q009,Security,How often do you run external penetration tests and when was the last one?
+Q010,Security,Within what time do you notify us of a personal data breach?
+Q011,Resilience,What are your RPO and RTO and how often is recovery tested?
+Q012,Resilience,What monthly availability do you guarantee and what are the service credits?
+Q013,People,Do you screen employees and train them on security?
+Q014,Governance,What is the limit of your cyber insurance coverage?
+Q015,Security,Do you run a public bug bounty programme?

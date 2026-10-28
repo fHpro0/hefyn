@@ -1,0 +1,6 @@
+{
+  "name": "Scrum sprints for docs and code changes",
+  "description": "Runs a Scrum team over a backlog of docs and code changes: refinement, planning by capacity, implementation, code review, product owner acceptance, carry-over, review, retrospective and release.",
+  "icon": "Repeat",
+  "agent": "claude-acp"
+}

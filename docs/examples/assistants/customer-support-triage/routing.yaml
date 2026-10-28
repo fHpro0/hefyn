@@ -1,0 +1,45 @@
+# Categories, the words that point to them, and who handles them.
+# A ticket gets exactly one category. If two match, the one listed first wins, except `safety` and `legal_privacy`, which always win.
+categories:
+  safety:
+    team: safety
+    keywords: [smoke, burning smell, overheating, fire, spark, electric shock, Rauch, Brandgeruch, überhitzt, Funken, Stromschlag, fumée, surchauffe]
+  legal_privacy:
+    team: legal-privacy
+    keywords: [GDPR, DSGVO, RGPD, data subject, Auskunft, Löschung, delete my data, Widerspruch, Anwalt, lawyer, avocat, Abmahnung, Datenschutzbehörde, supervisory authority]
+  billing:
+    team: billing
+    keywords: [invoice, Rechnung, facture, charged twice, doppelt abgebucht, refund, Erstattung, remboursement, payment, Zahlung, SEPA, direct debit, Lastschrift]
+  shipping:
+    team: logistics
+    keywords: [delivery, Lieferung, tracking, Sendungsnummer, package, Paket, colis, damaged, beschädigt, missing, nicht angekommen, retour, return]
+  technical:
+    team: technical-support
+    keywords: [app, WLAN, WiFi, pairing, koppeln, reset, firmware, update, not working, funktioniert nicht, flackert, flickers, bridge, Hub]
+  account:
+    team: technical-support
+    keywords: [password, Passwort, login, anmelden, mot de passe, locked, gesperrt, two-factor, 2FA]
+  sales:
+    team: sales
+    keywords: [quote, Angebot, bulk, volume, Großbestellung, partnership, Reseller, devis]
+  cancellation:
+    team: retention
+    keywords: [cancel, kündigen, Kündigung, annuler, subscription, Abo, Lumio Care]
+  other:
+    team: support-general
+    keywords: []
+
+teams:
+  safety: {queue: "support/safety", on_call: true}
+  legal-privacy: {queue: "legal/privacy-requests", on_call: false, email: privacy@lumio.example}
+  billing: {queue: "support/billing", on_call: false}
+  logistics: {queue: "support/logistics", on_call: false}
+  technical-support: {queue: "support/tech", on_call: false}
+  sales: {queue: "sales/inbound", on_call: false}
+  retention: {queue: "support/retention", on_call: false}
+  support-general: {queue: "support/general", on_call: false}
+
+# Customers whose tickets need a person to look first (ask the person running the triage).
+key_accounts:
+  - domain: hotel-seeblick.example
+  - domain: stadtwerke-rheinau.example

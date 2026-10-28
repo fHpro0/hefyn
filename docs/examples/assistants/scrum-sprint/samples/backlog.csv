@@ -1,0 +1,13 @@
+id,title,story,acceptance_criteria,estimate,priority,status
+US-101,Fix broken links in the install guide,As a new user I want working links in the install guide so that I can finish the setup,All 14 links return 200; link check passes in CI,2,1,new
+US-102,Document the retry behaviour of the SDK,As an integrator I want the retry rules documented so that I can plan for outages,Page lists attempts and back-off; example code runs; reviewed by an SDK maintainer,3,2,new
+US-103,Add a timeout option to the CLI export,As an operator I want a timeout for exports so that a stuck export does not block the pipeline,--timeout flag with default 60 s; exit code 3 on timeout; unit test and help text,5,3,new
+US-104,Rename the config key api_url to base_url,As a developer I want one consistent key name so that the docs and the code agree,,3,4,new
+US-105,Add a changelog page to the docs site,As a customer I want a changelog so that I can see what changed per release,Page lists the last 5 releases; generated from the release notes; linked in the footer,3,5,new
+US-106,Migrate code samples to the new client class,As an integrator I want samples on the new client so that I do not copy deprecated code,All samples in the quick start use Client; samples run in CI,,6,new
+US-107,Show the API version in the CLI help,As an operator I want the API version in --help so that I know what the CLI targets,--help prints the version; test covers the output,1,7,new
+US-108,Explain the permission model in the docs,As an admin I want the permission model explained so that I grant the right roles,,5,8,new
+US-109,Rewrite the whole authentication guide,As a developer I want a complete authentication guide so that I can integrate sign-in,"Covers token, refresh and revoke flows; each flow has a runnable sample",13,9,new
+US-110,Add an examples folder with three starter projects,As a new user I want starter projects so that I can begin quickly,Three folders build with one command; README per project,,10,new
+US-111,Remove the legacy v1 endpoints from the reference,As a maintainer I want v1 gone from the reference so that nobody starts on it,,2,11,new
+US-112,Add a troubleshooting section for proxy errors,As a support engineer I want a proxy troubleshooting section so that I can answer tickets faster,Lists the 4 most common errors with cause and fix; reviewed by support,2,12,new

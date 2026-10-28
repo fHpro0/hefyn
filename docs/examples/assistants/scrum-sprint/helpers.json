@@ -1,0 +1,12 @@
+[
+  {
+    "role": "developer",
+    "agent": "claude-acp",
+    "edit": true
+  },
+  {
+    "role": "reviewer",
+    "agent": "claude-acp",
+    "edit": false
+  }
+]

@@ -1,0 +1,8 @@
+claim,aliases,held,valid_until,evidence_id,owner,official_statement
+ISO 27001,ISO 27001;ISO/IEC 27001,yes,2027-03-31,SEC-009,Mara Lindqvist,
+SOC 2,SOC 2;SOC2,no,,,Mara Lindqvist,Nimbus Analytics does not currently hold a SOC 2 report.
+TISAX,TISAX,no,,,Mara Lindqvist,Nimbus Analytics does not hold a TISAX assessment.
+PCI DSS,PCI DSS;PCI-DSS,no,,,Mara Lindqvist,Nimbus Analytics does not process payment card data; PCI DSS does not apply.
+HIPAA,HIPAA,no,,,Mara Lindqvist,Nimbus Analytics does not offer HIPAA business associate agreements.
+FedRAMP,FedRAMP,no,,,Mara Lindqvist,Nimbus Analytics does not hold FedRAMP authorization.
+CSA STAR,CSA STAR,no,,,Mara Lindqvist,Nimbus Analytics is not listed in the CSA STAR registry.

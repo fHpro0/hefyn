@@ -1,0 +1,6 @@
+{
+  "name": "Invoice processing",
+  "description": "Reads supplier invoices, matches them to purchase orders and goods receipts, flags exceptions and prepares the booking file.",
+  "icon": "Receipt",
+  "agent": "claude-acp"
+}

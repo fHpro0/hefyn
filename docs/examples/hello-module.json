@@ -1,0 +1,45 @@
+{
+  "id": "hello",
+  "name": "Hello module",
+  "version": "1.0.0",
+  "description": "Example installed module: one screen with every block type, backed by a remote MCP server.",
+  "icon": "Hand",
+  "permissions": [{ "name": "view", "label": "Open the hello screen", "hint": "See the screen and call its tools." }],
+  "nav": [{ "place": "main", "label": "Hello", "href": "/m/hello/home", "icon": "Hand", "permission": "view", "order": 90 }],
+  "commands": [{ "label": "Open Hello", "href": "/m/hello/home", "icon": "Hand", "permission": "view" }],
+  "settings": [
+    { "key": "apiKey", "label": "API key", "hint": "Sent to the MCP server as the x-hefyn-setting-apikey header.", "type": "secret" },
+    { "key": "greeting", "label": "Greeting", "type": "text", "default": "Hello" }
+  ],
+  "mcp": { "url": "https://hello-mcp.example.com/mcp" },
+  "agent": { "tools": ["list_people"], "permission": "view" },
+  "screens": {
+    "home": {
+      "title": "Hello",
+      "hint": "Every block type, in one screen.",
+      "permission": "view",
+      "blocks": [
+        { "type": "text", "text": "Data on this screen comes from tool calls on the module's own MCP server." },
+        { "type": "alert", "tone": "info", "text": "If the server is unreachable, each block shows its own error." },
+        { "type": "stat", "label": "Open tickets", "tool": "count_tickets", "path": "total" },
+        {
+          "type": "table", "tool": "list_tickets", "args": { "status": "open" },
+          "columns": [{ "key": "id", "label": "Id" }, { "key": "title", "label": "Title" }],
+          "rowAction": { "label": "Close", "tool": "close_ticket" }
+        },
+        { "type": "list", "tool": "list_people", "primary": "name", "secondary": "email" },
+        {
+          "type": "form",
+          "fields": [
+            { "key": "title", "label": "Title", "type": "text", "required": true },
+            { "key": "priority", "label": "Priority", "type": "select", "options": ["low", "normal", "high"], "default": "normal" },
+            { "key": "urgent", "label": "Urgent", "type": "boolean" }
+          ],
+          "submit": { "tool": "create_ticket", "label": "Create ticket" }
+        },
+        { "type": "button", "label": "Refresh stats", "tool": "refresh" },
+        { "type": "button", "label": "Documentation", "href": "https://example.com/docs" }
+      ]
+    }
+  }
+}
