@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <strong>A self-hosted workspace where your team uses coding agents on company data.</strong>
+  <strong>One login for your team's coding agents, and workflows everyone can share.</strong>
 </p>
 
 <p align="center">
@@ -32,18 +32,15 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/hero-dark.gif">
-    <img src="docs/readme/hero-light.gif" alt="Your team in the browser, one sandbox per person running Claude Code, Codex or Pi, a gateway that adds the real model key, and an egress allowlist to Anthropic, OpenAI and MCP servers" width="100%">
+    <img src="docs/readme/hero-light.gif" alt="Four people sign in through one login, a new workflow is shared and used by the team, and it runs on Claude Code with the company ERP" width="100%">
   </picture>
 </p>
 
 ## What hefyn is
 
-hefyn is a team server that hosts standard CLI coding agents (Claude Code, Codex, OpenCode, Pi) for people who do not
-live in a terminal. Everyone signs in once and gets a chat view per agent, plus the agent's own terminal on the same
-process. Each conversation runs in its own Docker sandbox.
+hefyn gives a whole team one login to standard CLI coding agents (Claude Code, Codex, OpenCode, Pi) in the browser. An admin connects the agents, model keys and tools once; nobody needs their own API key or a separate account per tool.
 
-hefyn runs no agent of its own. It starts the vendor's CLI in a container and shows what it does. An admin installs the
-agents, connects the model keys, defines roles and adds MCP servers once; everyone else just uses them.
+When someone builds a workflow (an Assistant with its instructions and skills), they share it and the whole team can use it. Each person works in a chat view or the agent's own terminal, and every conversation runs in its own Docker sandbox. hefyn runs no agent of its own: it starts the vendor's CLI and shows what it does.
 
 Model keys never enter the sandbox. The agent inside talks to a local bridge, which forwards over a unix socket to a
 gateway in hefyn's agent service, and the gateway adds the real key. The agent service (and with it the model traffic of

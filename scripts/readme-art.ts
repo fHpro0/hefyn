@@ -156,8 +156,7 @@ async function wordGrid() {
 
 async function logo() {
   const word = await wordGrid();
-  console.log(word.join("\n"));
-  const TAG = "self-hosted coding agents for teams";
+  const TAG = "one login · shared workflows · your team's coding agents";
   const wx = L_X + 13 * M_CW + GAP, MAXP = wx - L_X + W_COLS * W_CW + 9 * M_CH;
   // [grid origin x, cell w, cell h, font size, final glyphs, base colour kind]
   const layers = [
@@ -206,11 +205,18 @@ async function logo() {
   }
 }
 
-// ---------- 2. hero ----------
+// ---------- 2. hero: one login + shared workflows ----------
+// Story: four people -> ONE gate -> shared workflows -> agents/tools. A loop of 8 s (160 frames):
+// lena adds a workflow (typed in), tobias and sofia use it (counter ticks), it runs on Claude Code + ERP,
+// results flow back to everyone, the new row fades out so frame 159 -> frame 0 is seamless.
 const H_W = 1200, H_H = 520, H_CW = 10, H_FS = H_CW / ADV, H_CH = 19, H_COLS = 120;
 type Kind = "line" | "fg" | "muted" | "accent";
 interface HCell { ch: string; k: Kind; comp?: string; only?: string }
-const FIRST_ROW = 2, LAST_ROW = 24;
+const FIRST_ROW = 1, LAST_ROW = 23;
+const HFPS = 20, HT = 160;
+const GX = 22, BUS = 19, NR = 12, PY = [5, 9, 13, 17];
+const NEW_ROW = "▸ Month-end close".padEnd(24) + "by lena";
+const TYPE0 = 18, TAG0 = 50, TICKS = [50, 67, 81], FADE0 = 128;
 
 function heroBase() {
   const cells = new Map<string, HCell>();
@@ -223,65 +229,64 @@ function heroBase() {
     put(x0, y0, "┌", "line", comp); put(x1, y0, "┐", "line", comp);
     put(x0, y1, "└", "line", comp); put(x1, y1, "┘", "line", comp);
   };
-  const P = { L: 18, PB: 15, GX: 92, BX: 102 };
-  const py = [5, 10, 15], ty = [9, 14, 19];
-  const cx = [0, 1, 2].map((i) => P.L + 2 + i * 24 + 11);
 
-  // people
-  put(1, 3, "your team", "muted");
-  ["lena", "tobias", "sofia"].forEach((n, j) => {
-    const y0 = py[j] - 1, c = "p" + j;
-    box(1, y0, 13, y0 + 3, c);
-    put(3, y0 + 1, n, "fg", c);
-    put(3, y0 + 2, "▫ browser", "muted", c);
-    put(13, py[j], "├", "line", c);
-    put(14, py[j], "─", "line");
+  // your team -> bus -> the one gate
+  put(1, 1, "your team", "muted");
+  ["anna", "lena", "tobias", "sofia"].forEach((n, j) => {
+    const y = PY[j], c = "p" + j;
+    box(1, y - 1, 16, y + 1, c);
+    put(3, y, n, "fg", c);
+    if (!j) put(3 + n.length, y, " · admin", "muted", c);
+    put(16, y, "├", "line", c);
+    put(17, y, "──", "line");
   });
-  put(P.PB, 5, "┬", "line"); put(P.PB, 10, "┤", "line"); put(P.PB, 15, "┘", "line");
-  for (const y of [6, 7, 8, 9, 11, 12, 13, 14]) put(P.PB, y, "│", "line");
-  put(P.PB + 1, 5, "──", "line"); put(P.L, 5, "┼", "line"); put(P.L + 1, 5, "►", "line");
-  put(14, 10, "─", "line"); put(14, 15, "─", "line");
+  put(BUS, 5, "┐", "line"); put(BUS, 9, "┤", "line"); put(BUS, 13, "┤", "line"); put(BUS, 17, "┘", "line");
+  for (const y of [6, 7, 8, 10, 12, 14, 15, 16]) put(BUS, y, "│", "line");
+  put(BUS, 11, "├", "line"); put(20, 11, "─", "line"); put(21, 11, "►", "line");
 
-  // hefyn box
-  box(P.L, 2, P.GX, 16);
-  put(P.L + 2, 2, " hefyn · self-hosted ", "accent");
-  box(P.L + 2, 4, P.L + 72, 6, "bar");
-  const bt = "login · roles · keys · usage";
-  put(mid(bt, P.L + 2, P.L + 72), 5, bt, "fg", "bar");
-  ["Claude Code", "Codex", "Pi"].forEach((n, i) => {
-    const x0 = P.L + 2 + i * 24, c = "sb" + i, x = cx[i];
-    box(x0, 8, x0 + 22, 11, c);
-    put(mid(n, x0, x0 + 22), 9, n, "fg", c);
-    put(x0 + 1, 10, "sandbox · no network", "muted", c);
-    put(x, 6, "┬", "line", "bar"); put(x, 7, "│", "line"); put(x, 8, "┴", "line", c);
-    put(x, 11, "┬", "line", c); put(x, 12, "│", "line"); put(x, 13, "┴", "line", "gw");
-  });
-  box(P.L + 2, 13, P.L + 72, 15, "gw");
-  const gx = mid("gateway  + adds the real key", P.L + 2, P.L + 72);
-  put(gx, 14, "gateway", "fg", "gw"); put(gx + 9, 14, "+ adds the real key", "muted", "gw");
-  // egress gate on the box edge
-  for (const y of [13, 14, 15]) put(P.GX, y, "┃", "line", "gate");
-  put(P.GX + 1, 13, "egress", "muted"); put(P.GX + 1, 15, "allowlist", "muted");
-  put(P.GX + 1, 16, "✓ allowed", "accent", "gate", "gate");
-  put(P.GX + 1, 14, "─".repeat(9), "line");
+  // hefyn frame; its left edge is the gate (drawn as a rect in hero())
+  box(GX, 2, 84, 19);
+  for (let y = 3; y <= 18; y++) cells.delete(`${GX},${y}`);
+  put(26, 2, " hefyn ", "accent");
+  put(GX - 4, 1, "one login", "accent");
+  put(GX - 5, 20, "✓ signed in", "accent", "gate", "gate");
 
-  // outside
-  put(104, 7, "outside", "muted");
-  ["Anthropic", "OpenAI", "MCP servers"].forEach((n, j) => {
-    const y = ty[j], c = "pr" + j;
-    box(104, y - 1, 118, y + 1, c);
-    put(mid(n, 104, 118), y, n, "fg", c);
-    put(P.BX + 1, y, "►", "line");
+  // shared workflows panel
+  box(25, 4, 81, 14);
+  put(27, 4, " shared workflows ", "fg");
+  ([["Invoice processing", "anna", 4], ["Support triage", "lena", 4], ["Onboarding checklist", "tobias", 3]] as const).forEach(([n, a, u], i) => {
+    const y = 6 + 2 * i;
+    put(27, y, ("▸ " + n).padEnd(24), "fg"); put(51, y, "by " + a, "muted"); put(72, y, "used by " + u, "muted");
   });
-  put(P.BX, 9, "┌", "line"); put(P.BX, 14, "┼", "line"); put(P.BX, 19, "└", "line");
-  for (const y of [10, 11, 12, 13, 15, 16, 17, 18]) put(P.BX, y, "│", "line");
+  put(23, 6, "┌", "line"); put(23, 7, "│", "line"); put(23, 8, "├", "line"); put(23, 9, "│", "line");
+  put(23, 10, "├", "line"); put(23, 11, "┤", "line"); put(23, 12, "└", "line");
+  for (const y of [6, 8, 10, 12]) put(24, y, "►", "line");
+  // set-up strip
+  box(25, 16, 81, 18);
+  const s1 = "set up once by anna", s2 = ": agents · keys · tools", sx = mid(s1 + s2, 25, 81);
+  put(sx, 17, s1, "fg"); put(sx + s1.length, 17, s2, "muted");
+
+  // ready for everyone
+  put(96, 1, "ready for everyone", "muted");
+  box(96, 4, 118, 9); put(98, 4, " agents ", "muted");
+  ["Claude Code", "Codex", "OpenCode", "Pi"].forEach((n, i) => put(98, 5 + i, n, "fg", "a" + i));
+  box(96, 11, 118, 16); put(98, 11, " tools · models ", "muted");
+  ["ERP", "Wiki", "Anthropic", "OpenAI"].forEach((n, i) => put(98, 12 + i, n, "fg", "t" + i));
+  put(81, 12, "├", "line"); put(82, 12, "──", "line"); put(84, 12, "┼", "line"); put(85, 12, "─────", "line");
+  put(90, 5, "┌", "line"); for (const y of [6, 7, 8, 13, 14]) put(90, y, "├", "line");
+  for (const y of [9, 10, 11]) put(90, y, "│", "line");
+  put(90, 12, "┼", "line"); put(90, 15, "└", "line");
+  for (const y of [5, 6, 7, 8, 12, 13, 14, 15]) { put(91, y, "────", "line"); put(95, y, "►", "line"); }
 
   // footer
-  const caps = ["every person gets their own sandbox", "model keys never enter the sandbox", "only allowed hosts go out"];
-  const gap = Math.floor((118 - caps.reduce((a, s) => a + s.length, 0)) / 2);
-  caps.reduce((x, s) => (put(x, 24, s, "muted"), x + s.length + gap), 1);
+  const caps = ["sign in once, use every agent", "build a workflow once, the whole team uses it", "keys and tools set up once by an admin"];
+  caps.reduce((x, s, i) => {
+    put(x, 23, s, "muted");
+    if (i < 2) put(x + s.length + 1, 23, "·", "muted");
+    return x + s.length + 3;
+  }, 1);
 
-  // ---- pulse timelines (cells in path order) ----
+  // ---- pulses: cells in path order, holds highlight a component ----
   const line = (...pts: number[][]) => {
     const out: number[][] = [];
     for (let i = 0; i + 1 < pts.length; i++) {
@@ -293,67 +298,87 @@ function heroBase() {
   };
   type Seg = { move: number[][] } | { hold: string; n: number };
   type State = { cells: number[][]; fwd: boolean; comps: string[] };
-  const tracks = [0, 1, 2].map((j) => {
-    const toBar = j ? line([14, py[j]], [P.PB, py[j]], [P.PB, 5], [P.L + 1, 5]) : line([14, 5], [P.L + 1, 5]);
-    const out = line([P.GX + 1, 14], [P.BX, 14], [P.BX, ty[j]], [P.BX + 1, ty[j]]);
-    const segs: Seg[] = [
-      { hold: "p" + j, n: 3 }, { move: toBar }, { hold: "bar", n: 6 }, { move: [[cx[j], 7]] }, { hold: "sb" + j, n: 5 },
-      { move: [[cx[j], 12]] }, { hold: "gw", n: 6 }, { move: [[P.GX - 1, 14]] }, { hold: "gate", n: 4 },
-      { move: out }, { hold: "pr" + j, n: 5 },
-    ];
-    const back: Seg[] = segs.slice(0, -1).reverse().map((s) =>
-      "move" in s ? { move: [...s.move].reverse() } : { hold: s.hold, n: Math.max(2, s.n - 2) });
+  const pulse = (start: number, segs: Seg[], fwd = true) => {
     const states: State[] = [];
-    const flatten = (list: Seg[], fwd: boolean) => {
-      for (const s of list) {
-        if ("hold" in s) for (let i = 0; i < s.n; i++) states.push({ cells: [], fwd, comps: [s.hold] });
-        else for (let i = 0; i < s.move.length; i += 2) {
-          const h = Math.min(i + 1, s.move.length - 1);
-          states.push({ cells: s.move.slice(Math.max(0, h - 4), h + 1), fwd, comps: [] });
-        }
+    for (const s of segs) {
+      if ("hold" in s) for (let i = 0; i < s.n; i++) states.push({ cells: [], fwd, comps: [s.hold] });
+      else for (let i = 0; i < s.move.length; i += 2) {
+        const h = Math.min(i + 1, s.move.length - 1);
+        states.push({ cells: s.move.slice(Math.max(0, h - 4), h + 1), fwd, comps: [] });
       }
-    };
-    flatten(segs, true); flatten(back, false);
-    return states;
-  });
-  return { cells, tracks };
+    }
+    return { start, states };
+  };
+  const toGate = (j: number) => line([17, PY[j]], [BUS, PY[j]], [BUS, 11], [21, 11]);
+  const toRow = line([23, 11], [23, 12], [24, 12]);
+  const use = (start: number, j: number, gateN: number, rowN: number) =>
+    pulse(start, [{ hold: "p" + j, n: 3 }, { move: toGate(j) }, { hold: "gate", n: gateN }, { move: toRow }, { hold: "new", n: rowN }]);
+  const pulses = [
+    use(4, 1, 5, 32), // lena adds the workflow: lands at TYPE0, typing ends ~f48, pulse done at f50
+    use(54, 2, 4, 5), // tobias uses it: lands f67
+    use(66, 3, 4, 5), // sofia uses it: lands f81
+    pulse(88, [{ hold: "new", n: 3 }, { move: line([82, 12], [90, 12], [90, 5], [95, 5]) }, { hold: "a0", n: 8 }]), // -> Claude Code
+    pulse(88, [{ hold: "new", n: 3 }, { move: line([82, 12], [95, 12]) }, { hold: "t0", n: 8 }]), // -> ERP
+    ...PY.map((y, k) => pulse(108, [
+      { hold: "new", n: 2 }, { move: line([24, 12], [23, 12], [23, 11]) }, { hold: "gate", n: 3 },
+      { move: line([21, 11], [BUS, 11], [BUS, y], [17, y]) }, { hold: "p" + k, n: 4 },
+    ], false)), // results flow back to everyone
+  ];
+  for (const p of pulses) if (p.start + p.states.length > HT) throw new Error("pulse runs past the loop end");
+  return { cells, pulses };
 }
 
 function hero() {
-  const { cells, tracks } = heroBase();
-  const FPS = 20, T = 120, OFF = [0, 40, 80];
-  for (const t of tracks) if (t.length > T) throw new Error(`pulse track ${t.length} > loop ${T}`);
+  const { cells, pulses } = heroBase();
   const oy = (H_H - (LAST_ROW - FIRST_ROW + 1) * H_CH) / 2 - FIRST_ROW * H_CH;
+  const gx = GX * H_CW + H_CW / 2, gy = oy + 3 * H_CH, gh = 16 * H_CH;
   return Promise.all(THEMES.map(async (th) => {
     const back = backdrop(H_W, H_H, th);
     const col: Record<Kind, string> = { line: mix(th.muted, th.bg, 0.55), fg: th.fg, muted: th.muted, accent: th.accent };
-    const pulse = mix(th.accent, th.fg, 0.55);
+    const ret = mix(th.accent, th.fg, 0.55);
     const svgs: string[] = [];
-    for (let f = 0; f < T; f++) {
+    for (let f = 0; f < HT; f++) {
       const g = newGrid(Math.ceil(H_H / H_CH), H_COLS);
       const active = new Set<string>();
       let shapes = "";
-      tracks.forEach((tr, j) => {
-        const s = (((f - OFF[j]) % T) + T) % T;
-        if (s >= tr.length) return;
-        const st = tr[s];
+      for (const p of pulses) {
+        const st = p.states[f - p.start];
+        if (!st) continue;
         st.comps.forEach((c) => active.add(c));
         st.cells.forEach((c, i) => {
           // bright head with a halo, then a trail of shrinking, fading dots along the path
-          const age = st.cells.length - 1 - i, clr = st.fwd ? th.accent : pulse;
+          const age = st.cells.length - 1 - i, clr = st.fwd ? th.accent : ret;
           const cx = c[0] * H_CW + H_CW / 2, cy = oy + c[1] * H_CH + H_CH / 2;
           if (!age) shapes += `<circle cx="${cx}" cy="${cy}" r="9" fill="${clr}" fill-opacity="0.22"/>`;
           shapes += `<circle cx="${cx}" cy="${cy}" r="${age ? 3.6 - 0.6 * age : 5}" fill="${clr}" fill-opacity="${age ? 0.85 - 0.2 * age : 1}"/>`;
         });
-      });
+      }
       for (const [key, c] of cells) {
         if (c.only && !active.has(c.only)) continue;
         const [x, y] = key.split(",").map(Number);
         g[y][x] = { ch: c.ch, color: c.comp && active.has(c.comp) ? th.accent : col[c.k] };
       }
-      svgs.push(svgDoc(H_W, H_H, th, back, textLayer(g, 0, oy, H_CW, H_CH, H_FS) + shapes));
+      // the new workflow row: typed in, tagged, counted, then faded out
+      const typed = f < TYPE0 ? 0 : Math.min(NEW_ROW.length, f - TYPE0 + 1);
+      const fade = f >= FADE0 ? clamp(1 - (f - FADE0) / 16) : 1;
+      if (typed && fade > 0) {
+        const hl = active.has("new"), put = (x: number, s: string, c: string) =>
+          [...s].forEach((ch, i) => { if (ch !== " ") g[NR][x + i] = { ch, color: mix(c, th.bg, fade) }; });
+        [...NEW_ROW.slice(0, typed)].forEach((ch, i) =>
+          put(27 + i, ch, hl || typed < NEW_ROW.length ? th.accent : i >= 24 ? th.muted : th.fg));
+        if (typed < NEW_ROW.length) put(27 + typed, "█", th.accent);
+        if (f >= TAG0 && f < TAG0 + 14) put(61, "shared ✓", th.accent);
+        const n = TICKS.filter((t) => f >= t).length;
+        if (n) put(72, `used by ${n}`, TICKS.some((t) => f >= t && f < t + 6) ? th.accent : th.muted);
+      }
+      // the gate: always lit, strongest accent when someone signs in
+      const on = active.has("gate");
+      const gate = on
+        ? `<rect x="${gx - 9}" y="${gy}" width="18" height="${gh}" fill="${th.accent}" fill-opacity="0.22"/><rect x="${gx - 3}" y="${gy}" width="6" height="${gh}" fill="${th.accent}"/>`
+        : `<rect x="${gx - 2}" y="${gy}" width="4" height="${gh}" fill="${th.accent}" fill-opacity="0.6"/>`;
+      svgs.push(svgDoc(H_W, H_H, th, back, textLayer(g, 0, oy, H_CW, H_CH, H_FS) + gate + shapes));
     }
-    await makeGif(`hero-${th.name}.gif`, H_W, H_H, FPS, svgs);
+    await makeGif(`hero-${th.name}.gif`, H_W, H_H, HFPS, svgs);
   }));
 }
 
