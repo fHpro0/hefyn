@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/hefyn-wordmark-white.svg">
-    <img src="assets/brand/hefyn-wordmark.svg" alt="hefyn" height="64">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/logo-dark.gif">
+    <img src="docs/readme/logo-light.gif" alt="hefyn" width="640">
   </picture>
 </p>
 
@@ -31,8 +31,8 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/chat-thread-dark.png">
-    <img src="docs/screenshots/chat-thread-light.png" alt="A chat with a coding agent in hefyn" width="100%">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/hero-dark.gif">
+    <img src="docs/readme/hero-light.gif" alt="Your team in the browser, one sandbox per person running Claude Code, Codex or Pi, a gateway that adds the real model key, and an egress allowlist to Anthropic, OpenAI and MCP servers" width="100%">
   </picture>
 </p>
 
@@ -62,6 +62,15 @@ sandboxes) reaches the internet only through an egress proxy that allows connect
 | **Branding and appearance** Light and dark, workspace logo. | **Command palette** Keyboard-first navigation. |
 
 ## How it looks
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/chat-thread-dark.png">
+    <img src="docs/screenshots/chat-thread-light.png" alt="A chat with Claude Code in hefyn: plan, tool calls, a diff and the answer" width="100%">
+  </picture>
+  <br>
+  <sub>A chat with Claude Code: plan, tool calls and a diff, in the browser.</sub>
+</p>
 
 <table>
   <tr>
@@ -252,6 +261,8 @@ bun run typecheck
 bun run test         # each test file in its own `bun test` process
 bun run dev:docker   # the same with hot reload in Docker
 ```
+
+`bun run readme:art` regenerates the README's ASCII logo and diagram (needs ffmpeg, rsvg-convert and ImageMagick).
 
 Bun 1.4.4 or newer; the servers run the TypeScript sources directly. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [docs index](docs/README.md).
 

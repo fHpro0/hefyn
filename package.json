@@ -64,6 +64,7 @@
   },
   "packageManager": "bun@1.4.4",
   "scripts": {
+    "readme:art": "bun scripts/readme-art.ts",
     "dev": "concurrently -k -n agent,web \"bun run dev:agent\" \"bun run dev:web\"",
     "build": "bun web/build.ts",
     "start": "bun src/agent.ts",
