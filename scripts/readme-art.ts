@@ -236,8 +236,9 @@ type Kind = "line" | "fg" | "muted" | "accent";
 interface HCell { ch: string; k: Kind; comp?: string; only?: string }
 const FIRST_ROW = 1, LAST_ROW = 24;
 const HFPS = 20, HT = 200;
-const GX = 22, BUS = 19, RB = 82; // person bus column, gate column, right-hand bus column
-const PY = [5, 9, 13, 17]; // person name rows
+const GX = 22, BUS = 20, RB = 78; // gate column, person bus column, right-hand bus column
+const FR = 76, PR = 73, AX = 82; // frame and panel right edges, team-accounts box left edge
+const PY = [5, 10, 15, 20]; // person name rows (each person box is 4 rows: name + "private sessions")
 const TEAM_Y = 10, PRIV_Y = 15; // the empty team slot row and lena's private row
 const ROW_NAME = "▸ Month-end close";
 // timeline (frames)
@@ -262,34 +263,33 @@ function heroBase() {
   put(1, 1, "your team", "muted");
   ["anna", "lena", "tobias", "sofia"].forEach((n, j) => {
     const y = PY[j], c = "p" + j;
-    box(1, y - 1, 16, y + 1, c);
+    box(1, y - 1, 19, y + 2, c);
     put(3, y, n, "fg", c);
     if (!j) put(3 + n.length, y, " · admin", "muted", c);
-    put(1, y + 2, "private sessions", "muted");
-    put(16, y, "├", "line", c);
-    put(17, y, "──", "line");
+    put(3, y + 1, "private sessions", "muted", c);
+    put(19, y, "├", "line", c);
   });
-  put(BUS, 5, "┐", "line"); put(BUS, 9, "┤", "line"); put(BUS, 13, "┤", "line"); put(BUS, 17, "┘", "line");
-  for (const y of [6, 7, 8, 10, 12, 14, 15, 16]) put(BUS, y, "│", "line");
-  put(BUS, 11, "├", "line"); put(20, 11, "─", "line"); put(21, 11, "►", "line");
+  put(BUS, PY[0], "┐", "line"); put(BUS, PY[1], "┤", "line"); put(BUS, PY[2], "┤", "line"); put(BUS, PY[3], "┘", "line");
+  for (const y of [6, 7, 8, 9, 12, 13, 14, 16, 17, 18, 19]) put(BUS, y, "│", "line");
+  put(BUS, 11, "├", "line"); put(21, 11, "►", "line");
 
   // hefyn frame; its left edge is the gate (drawn as a rect in hero())
-  box(GX, 2, 80, 21);
+  box(GX, 2, FR, 21);
   for (let y = 3; y <= 20; y++) cells.delete(`${GX},${y}`);
   put(26, 2, " hefyn ", "accent");
   put(GX - 4, 1, "one login", "accent");
-  put(GX - 5, 22, "✓ signed in", "accent", "gate", "gate");
+  put(GX - 5, 23, "✓ signed in", "accent", "gate", "gate");
 
   // team workflows
-  box(25, 4, 77, 11);
+  box(25, 4, PR, 11);
   put(27, 4, " team workflows ", "fg");
   ([["Invoice processing", "anna", 4], ["Support triage", "lena", 4]] as const).forEach(([n, a, u], i) => {
     const y = 6 + 2 * i;
-    put(27, y, ("▸ " + n).padEnd(24), "fg"); put(51, y, "by " + a, "muted"); put(68, y, "used by " + u, "muted");
+    put(27, y, ("▸ " + n).padEnd(21), "fg"); put(48, y, "by " + a, "muted"); put(63, y, "used by " + u, "muted");
   });
   put(27, TEAM_Y, "▫ free slot", "line", "slot");
   // private panel
-  box(25, 13, 77, 17);
+  box(25, 13, PR, 17);
   put(27, 13, " private · lena ", "fg");
   put(27, PRIV_Y, "▫ nothing private yet", "line", "privslot");
   // inner bus from the gate to the three team rows and the private row
@@ -300,21 +300,21 @@ function heroBase() {
   for (const y of [6, 8, TEAM_Y, PRIV_Y]) put(24, y, "►", "line");
   // hint
   const hint = "pick a workflow, not a model";
-  put(mid(hint, 25, 77), 19, hint, "muted");
+  put(mid(hint, 25, PR), 19, hint, "muted");
 
-  // team accounts (one per CLI), set up once by the admin
-  put(86, 1, "set up once by anna", "muted");
-  box(86, 2, 118, 16); put(88, 2, " team accounts · one per CLI ", "fg");
+  // team accounts (one per CLI), set up once by the admin; line 2 carries the session counter
+  put(AX, 1, "set up once by anna", "muted");
+  box(AX, 2, 118, 16); put(AX + 2, 2, " team accounts · one per CLI ", "fg");
   ["Claude Code", "Codex", "OpenCode", "Pi"].forEach((n, i) => {
     const y = 5 + 3 * i;
-    put(88, y, n, "fg", "a" + i); put(88, y + 1, "team account", "muted");
-    if (i) { const n = [0, 2, 1, 0][i]; put(100, y, `${n} private session${n == 1 ? "" : "s"}`, "muted"); }
+    put(AX + 2, y, n, "fg", "a" + i);
+    if (i) put(AX + 2, y + 1, `team account · ${[0, 2, 1, 0][i]} private session${[0, 2, 1, 0][i] == 1 ? "" : "s"}`, "muted");
   });
-  box(86, 18, 118, 21); put(88, 18, " tools ", "fg");
-  ["ERP", "Wiki"].forEach((n, i) => put(88, 19 + i, n, "fg", "t" + i));
+  box(AX, 18, 118, 21); put(AX + 2, 18, " tools ", "fg");
+  ["ERP", "Wiki"].forEach((n, i) => put(AX + 2, 19 + i, n, "fg", "t" + i));
 
   // team/private rows -> right bus -> accounts and tools
-  for (const y of [TEAM_Y, PRIV_Y]) { put(77, y, "├", "line"); put(78, y, "──", "line"); put(80, y, "┼", "line"); put(81, y, "─", "line"); }
+  for (const y of [TEAM_Y, PRIV_Y]) { put(PR, y, "├", "line"); put(PR + 1, y, "──", "line"); put(FR, y, "┼", "line"); put(FR + 1, y, "─", "line"); }
   put(RB, 5, "┌", "line");
   for (const y of [6, 7, 9, 12, 13, 16, 17, 18]) put(RB, y, "│", "line");
   for (const y of [8, 11, 14, 19]) put(RB, y, "├", "line");
@@ -322,7 +322,7 @@ function heroBase() {
   for (const y of [5, 8, 11, 14, 19, 20]) { put(RB + 1, y, "──", "line"); put(RB + 3, y, "►", "line"); }
 
   // footer, spread out
-  const caps = ["sign in once, sessions private", "workflows private or shared with the team", "one team account per CLI, no model picking"];
+  const caps = ["one login, private sessions", "workflows: private or team", "one team account per CLI"];
   const x3 = 119 - caps[2].length, x2 = Math.floor((1 + caps[0].length + x3 - caps[1].length) / 2);
   [1, x2, x3].forEach((x, i) => put(x, 24, caps[i], "muted"));
 
@@ -349,20 +349,21 @@ function heroBase() {
     }
     return { start, states };
   };
-  const toGate = (j: number) => line([17, PY[j]], [BUS, PY[j]], [BUS, 11], [21, 11]);
-  const toClaude = (y: number) => line([78, y], [RB, y], [RB, 5], [RB + 3, 5]);
+  const toGate = (j: number) => line([BUS, PY[j]], [BUS, 11], [21, 11]);
+  const toClaude = (y: number) => line([PR + 1, y], [RB, y], [RB, 5], [RB + 3, 5]);
+  const toErp = (y: number) => line([PR + 1, y], [RB, y], [RB, 19], [RB + 3, 19]);
   const pulses = [
     // lena -> gate -> private row (it types in while her pulse rests there)
-    pulse(5, [{ hold: "p1", n: 3 }, { move: toGate(1) }, { hold: "gate", n: 5 }, { move: line([23, 11], [23, PRIV_Y], [24, PRIV_Y]) }, { hold: "new", n: 18 }]),
+    pulse(7, [{ hold: "p1", n: 3 }, { move: toGate(1) }, { hold: "gate", n: 5 }, { move: line([23, 11], [23, PRIV_Y], [24, PRIV_Y]) }, { hold: "new", n: 18 }]),
     // the private row runs on Claude Code and ERP ...
     pulse(40, [{ hold: "new", n: 3 }, { move: toClaude(PRIV_Y) }, { hold: "a0", n: 8 }]),
-    pulse(40, [{ hold: "new", n: 3 }, { move: line([78, PRIV_Y], [RB, PRIV_Y], [RB, 19], [RB + 3, 19]) }, { hold: "t0", n: 8 }]),
+    pulse(40, [{ hold: "new", n: 3 }, { move: toErp(PRIV_Y) }, { hold: "t0", n: 8 }]),
     // ... and the results return to lena
     pulse(62, [{ move: [...toClaude(PRIV_Y)].reverse() }, { hold: "new", n: 3 },
-      { move: line([24, PRIV_Y], [23, PRIV_Y], [23, 11], [21, 11], [BUS, 11], [BUS, PY[1]], [17, PY[1]]) }, { hold: "p1", n: 4 }], false),
-    pulse(58, [{ move: [...line([78, PRIV_Y], [RB, PRIV_Y], [RB, 19], [RB + 3, 19])].reverse() }, { hold: "new", n: 2 }], false),
+      { move: line([24, PRIV_Y], [23, PRIV_Y], [23, 11], [21, 11], [BUS, 11], [BUS, PY[1]]) }, { hold: "p1", n: 4 }], false),
+    pulse(58, [{ move: [...toErp(PRIV_Y)].reverse() }, { hold: "new", n: 2 }], false),
     // tobias and sofia use the shared row: same gate, same team account
-    ...[[116, 2, 4], [128, 3, 4]].map(([start, j, gateN]) => pulse(start, [
+    ...[[117, 2, 4], [128, 3, 4]].map(([start, j, gateN]) => pulse(start, [
       { hold: "p" + j, n: 3 }, { move: toGate(j) }, { hold: "gate", n: gateN }, { move: line([23, 11], [23, TEAM_Y], [24, TEAM_Y]) },
       { hold: "new", n: 3 }, { move: toClaude(TEAM_Y) }, { hold: "a0", n: 6 },
     ])),
@@ -409,7 +410,9 @@ function hero() {
       // Claude Code's counter: one team account, many people (flashes on each tick, eases back at the end)
       const ups = CL_TICKS.filter((t) => f >= t).length, downs = CL_DOWN.filter((t) => f >= t).length;
       const cn = ups - downs;
-      put(100, 5, `${cn} private session${cn == 1 ? "" : "s"}`,CL_TICKS.some((t) => f >= t && f < t + 6) ? th.accent : th.muted);
+      put(AX + 2, 6, "team account · ", th.muted);
+      put(AX + 17, 6, `${cn}`, CL_TICKS.some((t) => f >= t && f < t + 6) ? th.accent : th.muted);
+      put(AX + 18, 6, ` private session${cn == 1 ? "" : "s"}`, th.muted);
 
       // the new workflow row: typed in privately, shared (slides up), counted, faded out. Drawn on its own
       // layer at a fractional y so the slide is smooth.
@@ -423,12 +426,12 @@ function hero() {
         const shared = f >= SLIDE1, sliding = f >= SLIDE0 && !shared;
         p1(27, ROW_NAME.slice(0, typed), hl || typed < ROW_NAME.length || f >= SHARE0 && !shared ? th.accent : th.fg);
         if (typed < ROW_NAME.length) p1(27 + typed, "█", th.accent);
-        else if (f >= TYPE0 + ROW_NAME.length && f < SHARE0) p1(51, "private · only lena", th.muted);
-        else if (f >= SHARE0 && !shared) p1(51, "share →", th.accent);
+        else if (f >= TYPE0 + ROW_NAME.length && f < SHARE0) p1(48, "private · only lena", th.muted);
+        else if (f >= SHARE0 && !shared) p1(48, "share →", th.accent);
         else if (shared) {
-          p1(51, "by lena", th.muted); p1(59, "team ✓", th.accent);
+          p1(48, "by lena", th.muted); p1(56, "team ✓", th.accent);
           const n = ROW_TICKS.filter((t) => f >= t).length;
-          p1(68, `used by ${n}`, ROW_TICKS.some((t) => f >= t && f < t + 6) ? th.accent : th.muted);
+          p1(63, `used by ${n}`, ROW_TICKS.some((t) => f >= t && f < t + 6) ? th.accent : th.muted);
         }
         const y = sliding ? PRIV_Y + (TEAM_Y - PRIV_Y) * ease((f - SLIDE0) / (SLIDE1 - SLIDE0)) : shared ? TEAM_Y : PRIV_Y;
         rowSvg = textLayer(r1, 0, oy + y * H_CH, H_CW, H_CH, H_FS);
