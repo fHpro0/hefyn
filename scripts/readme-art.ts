@@ -234,10 +234,10 @@ async function logo() {
 const H_W = 1200, H_H = 520, H_CW = 10, H_FS = H_CW / ADV, H_CH = 19, H_COLS = 120;
 type Kind = "line" | "fg" | "muted" | "accent";
 interface HCell { ch: string; k: Kind; comp?: string; only?: string }
-const FIRST_ROW = 1, LAST_ROW = 24;
-const HFPS = 20, HT = 200;
+const FIRST_ROW = 1, LAST_ROW = 25;
+const HFPS = 20, HT = 200, OPEN = 30; // HT frames of main story + OPEN frames of opening beat (anna -> Claude Code)
 const GX = 22, BUS = 20, RB = 78; // gate column, person bus column, right-hand bus column
-const FR = 76, PR = 73, AX = 82; // frame and panel right edges, team-accounts box left edge
+const FR = 76, PR = 73, AX = 81; // frame and panel right edges, subscriptions box left edge
 const PY = [5, 10, 15, 20]; // person name rows (each person box is 4 rows: name + "private sessions")
 const TEAM_Y = 10, PRIV_Y = 15; // the empty team slot row and lena's private row
 const ROW_NAME = "▸ Month-end close";
@@ -283,9 +283,9 @@ function heroBase() {
   // team workflows
   box(25, 4, PR, 11);
   put(27, 4, " team workflows ", "fg");
-  ([["Invoice processing", "anna", 4], ["Support triage", "lena", 4]] as const).forEach(([n, a, u], i) => {
+  ([["Invoices", "anna", 4], ["Support triage", "lena", 4]] as const).forEach(([n, a, u], i) => {
     const y = 6 + 2 * i;
-    put(27, y, ("▸ " + n).padEnd(21), "fg"); put(48, y, "by " + a, "muted"); put(63, y, "used by " + u, "muted");
+    put(27, y, ("▸ " + n).padEnd(21), "fg"); put(48, y, "by " + a, "muted"); put(64, y, "used · " + u, "muted");
   });
   put(27, TEAM_Y, "▫ free slot", "line", "slot");
   // private panel
@@ -303,12 +303,12 @@ function heroBase() {
   put(mid(hint, 25, PR), 19, hint, "muted");
 
   // team accounts (one per CLI), set up once by the admin; line 2 carries the session counter
-  put(AX, 1, "set up once by anna", "muted");
-  box(AX, 2, 118, 16); put(AX + 2, 2, " team accounts · one per CLI ", "fg");
+  put(AX, 1, "one per CLI · set up once by anna", "muted");
+  box(AX, 2, 118, 16); put(AX + 2, 2, " shared subscriptions ", "fg");
   ["Claude Code", "Codex", "OpenCode", "Pi"].forEach((n, i) => {
     const y = 5 + 3 * i;
     put(AX + 2, y, n, "fg", "a" + i);
-    if (i) put(AX + 2, y + 1, `team account · ${[0, 2, 1, 0][i]} private session${[0, 2, 1, 0][i] == 1 ? "" : "s"}`, "muted");
+    if (i) put(AX + 2, y + 1, `1 subscription · shared by ${[0, 2, 1, 0][i]}`, "muted");
   });
   box(AX, 18, 118, 21); put(AX + 2, 18, " tools ", "fg");
   ["ERP", "Wiki"].forEach((n, i) => put(AX + 2, 19 + i, n, "fg", "t" + i));
@@ -319,12 +319,12 @@ function heroBase() {
   for (const y of [6, 7, 9, 12, 13, 16, 17, 18]) put(RB, y, "│", "line");
   for (const y of [8, 11, 14, 19]) put(RB, y, "├", "line");
   put(RB, TEAM_Y, "┤", "line"); put(RB, PRIV_Y, "┤", "line"); put(RB, 20, "└", "line");
-  for (const y of [5, 8, 11, 14, 19, 20]) { put(RB + 1, y, "──", "line"); put(RB + 3, y, "►", "line"); }
+  for (const y of [5, 8, 11, 14, 19, 20]) { put(RB + 1, y, "─", "line"); put(RB + 2, y, "►", "line"); }
 
   // footer, spread out
-  const caps = ["one login, private sessions", "workflows: private or team", "one team account per CLI"];
+  const caps = ["share workflows with the team", "share one subscription per CLI", "sessions stay private"];
   const x3 = 119 - caps[2].length, x2 = Math.floor((1 + caps[0].length + x3 - caps[1].length) / 2);
-  [1, x2, x3].forEach((x, i) => put(x, 24, caps[i], "muted"));
+  [1, x2, x3].forEach((x, i) => put(x, 25, caps[i], "muted"));
 
   // ---- pulses: cells in path order, holds highlight a component ----
   const line = (...pts: number[][]) => {
@@ -350,9 +350,12 @@ function heroBase() {
     return { start, states };
   };
   const toGate = (j: number) => line([BUS, PY[j]], [BUS, 11], [21, 11]);
-  const toClaude = (y: number) => line([PR + 1, y], [RB, y], [RB, 5], [RB + 3, 5]);
-  const toErp = (y: number) => line([PR + 1, y], [RB, y], [RB, 19], [RB + 3, 19]);
+  const toClaude = (y: number) => line([PR + 1, y], [RB, y], [RB, 5], [RB + 2, 5]);
+  const toErp = (y: number) => line([PR + 1, y], [RB, y], [RB, 19], [RB + 2, 19]);
   const pulses = [
+    // opening beat: anna (admin) -> gate -> Claude Code, "shared with the team" flashes on that row
+    pulse(-26, [{ hold: "p0", n: 3 }, { move: toGate(0) }, { hold: "gate", n: 4 }, { move: line([23, 11], [23, TEAM_Y], [24, TEAM_Y]) },
+      { hold: "adm", n: 2 }, { move: toClaude(TEAM_Y) }, { hold: "a0", n: 8 }]),
     // lena -> gate -> private row (it types in while her pulse rests there)
     pulse(7, [{ hold: "p1", n: 3 }, { move: toGate(1) }, { hold: "gate", n: 5 }, { move: line([23, 11], [23, PRIV_Y], [24, PRIV_Y]) }, { hold: "new", n: 18 }]),
     // the private row runs on Claude Code and ERP ...
@@ -382,7 +385,8 @@ function hero() {
     const col: Record<Kind, string> = { line: mix(th.muted, th.bg, 0.55), fg: th.fg, muted: th.muted, accent: th.accent };
     const ret = mix(th.accent, th.fg, 0.55);
     const svgs: string[] = [];
-    for (let f = 0; f < HT; f++) {
+    for (let f0 = 0; f0 < HT + OPEN; f0++) {
+      const f = f0 - OPEN; // story frame; negative = opening beat
       const g = newGrid(Math.ceil(H_H / H_CH), H_COLS);
       const active = new Set<string>();
       let shapes = "";
@@ -410,9 +414,9 @@ function hero() {
       // Claude Code's counter: one team account, many people (flashes on each tick, eases back at the end)
       const ups = CL_TICKS.filter((t) => f >= t).length, downs = CL_DOWN.filter((t) => f >= t).length;
       const cn = ups - downs;
-      put(AX + 2, 6, "team account · ", th.muted);
-      put(AX + 17, 6, `${cn}`, CL_TICKS.some((t) => f >= t && f < t + 6) ? th.accent : th.muted);
-      put(AX + 18, 6, ` private session${cn == 1 ? "" : "s"}`, th.muted);
+      put(AX + 2, 6, "1 subscription · shared by ", th.muted);
+      put(AX + 29, 6, `${1 + cn}`, CL_TICKS.some((t) => f >= t && f < t + 6) ? th.accent : th.muted);
+      if (f >= -5 && f < 15) put(AX + 14, 5, "shared with the team ✓", mix(th.accent, th.bg, f < 10 ? 1 : 1 - (f - 10) / 5));
 
       // the new workflow row: typed in privately, shared (slides up), counted, faded out. Drawn on its own
       // layer at a fractional y so the slide is smooth.
@@ -431,10 +435,12 @@ function hero() {
         else if (shared) {
           p1(48, "by lena", th.muted); p1(56, "team ✓", th.accent);
           const n = ROW_TICKS.filter((t) => f >= t).length;
-          p1(63, `used by ${n}`, ROW_TICKS.some((t) => f >= t && f < t + 6) ? th.accent : th.muted);
+          p1(64, `used · ${n}`, ROW_TICKS.some((t) => f >= t && f < t + 6) ? th.accent : th.muted);
         }
         const y = sliding ? PRIV_Y + (TEAM_Y - PRIV_Y) * ease((f - SLIDE0) / (SLIDE1 - SLIDE0)) : shared ? TEAM_Y : PRIV_Y;
-        rowSvg = textLayer(r1, 0, oy + y * H_CH, H_CW, H_CH, H_FS);
+        // while sliding, mask what it passes over (panel borders and titles) so the text stays readable
+        const mask = sliding ? `<rect x="${26 * H_CW}" y="${oy + y * H_CH}" width="${(PR - 26) * H_CW}" height="${H_CH}" fill="${th.bg}"/>` : "";
+        rowSvg = mask + textLayer(r1, 0, oy + y * H_CH, H_CW, H_CH, H_FS);
       }
       // the gate: always lit, strongest accent when someone signs in
       const on = active.has("gate");
