@@ -128,25 +128,43 @@ const RAMP = " .:+*%@";
 const MARK = ["*@@@%", "@@@@%", "@@@@% .::::::", "@@@@%+@@@@@@@", "@@@@%+@@@@@@@", "@@@@% .: %%%%", "@@@@%   +@@@@", "@@@@%   +@@@@", "*@@@%   +@@@*"]
   .map((l) => l.padEnd(13));
 // Menlo advance = cell width (fs = cw / 0.602), line height ~1.15x font size. The word uses a finer grid.
-const L_W = 880, L_H = 272, L_OY = 16;
-const DENSE = 1; // font size = DENSE x (cell width / Menlo advance)
-const M_CW = 12, M_CH = 23, M_FS = DENSE * M_CW / ADV; // mark: 13x9 cells = 156x207 px
-const W_CW = 6, W_CH = 11.5, W_FS = 1.25 * DENSE * W_CW / ADV /* a touch heavier so the fine word keeps weight */, W_COLS = 85, W_ROWS = 18; // word: 510x207 px
-const GAP = 36, L_X = (L_W - (13 * M_CW + GAP + W_COLS * W_CW)) / 2;
+// The big ASCII "h" (the mark) is the word's first letter; a small "efyn" cropped from the real wordmark completes it.
+const L_W = 704, L_H = 384, L_OY = 18;
+const M_CW = 16, M_CH = 30, M_FS = M_CW / ADV; // mark: 13x9 cells = 208x270 px
+const W_CW = 4, W_CH = 6, W_FS = 1.25 * W_CW / ADV /* a touch heavier so the fine word keeps weight */; // efyn grid
+const BASE = 114; // px from the raster top to the wordmark baseline (svg y 712, viewBox top 284) = 19 efyn rows
+const K = BASE / (712 - 284); // wordmark px per svg unit
+const GAP = M_CW; // one mark cell between the h and the e
 
-/** Rasterize the real wordmark and map cell coverage to the ramp (sharp threshold so letters stay legible). */
-async function wordGrid() {
-  const w = W_COLS * W_CW, h = Math.round(W_ROWS * W_CH);
+/** Rasterize the real wordmark, crop the h off at the empty column gap, map cell coverage to the ramp. */
+async function efynGrid() {
+  const w = Math.round(1474 * K), h = Math.round(596 * K);
   const tmp = mkdtempSync(join(tmpdir(), "hefyn-word-"));
   try {
     await sh(["rsvg-convert", "-w", String(w), "-h", String(h), "-o", join(tmp, "w.png"), join(ROOT, "assets/brand/hefyn-wordmark.svg")]);
     const px = await sh(["magick", join(tmp, "w.png"), "-alpha", "extract", "-depth", "8", "gray:-"]);
-    return Array.from({ length: W_ROWS }, (_, r) =>
-      Array.from({ length: W_COLS }, (_, c) => {
-        const [y0, y1] = [Math.round(r * W_CH), Math.round((r + 1) * W_CH)];
+    const ink = (x: number) => { for (let y = 0; y < h; y++) if (px[y * w + x] > 60) return true; return false; };
+    let x = 0;
+    while (!ink(x)) x++;      // left margin
+    for (;;) {                // the h is a stem + an arch (gap ~5 px); the gap before the e is wider (>= 6 px)
+      while (ink(x)) x++;
+      const g = x;
+      while (!ink(x)) x++;
+      if (x - g >= 6) break;
+    }
+    const x0 = x;
+    let x1 = w - 1;
+    while (!ink(x1)) x1--;
+    const cols = Math.ceil((x1 - x0 + 1) / W_CW), rows = Math.ceil(h / W_CH);
+    return Array.from({ length: rows }, (_, r) =>
+      Array.from({ length: cols }, (_, c) => {
         let s = 0;
-        for (let y = y0; y < y1; y++) for (let x = 0; x < W_CW; x++) s += px[y * w + c * W_CW + x];
-        const cov = s / ((y1 - y0) * W_CW * 255);
+        for (let y = r * W_CH; y < (r + 1) * W_CH; y++)
+          for (let xx = c * W_CW; xx < (c + 1) * W_CW; xx++) {
+            const px_ = x0 + xx;
+            if (y < h && px_ <= x1) s += px[y * w + px_];
+          }
+        const cov = s / (W_CH * W_CW * 255);
         return cov < 0.3 ? " " : RAMP[1 + Math.min(5, Math.floor(Math.pow((cov - 0.3) / 0.7, 0.7) * 6))];
       }).join(""));
   } finally {
@@ -155,20 +173,23 @@ async function wordGrid() {
 }
 
 async function logo() {
-  const word = await wordGrid();
+  const word = await efynGrid();
   const TAG = "one login · shared workflows · your team's coding agents";
-  const wx = L_X + 13 * M_CW + GAP, MAXP = wx - L_X + W_COLS * W_CW + 9 * M_CH;
-  // [grid origin x, cell w, cell h, font size, final glyphs, base colour kind]
+  const markBottom = L_OY + 9 * M_CH, wy = markBottom - BASE; // efyn baseline sits on the mark's baseline
+  const wW = word[0].length * W_CW, L_X = (L_W - (13 * M_CW + GAP + wW)) / 2, wx = L_X + 13 * M_CW + GAP;
+  const MAXP = 13 * M_CW + GAP + wW + (wy + word.length * W_CH - L_OY);
   const layers = [
-    { x: L_X, cw: M_CW, ch: M_CH, fs: M_FS, fin: MARK, accent: true },
-    { x: wx, cw: W_CW, ch: W_CH, fs: W_FS, fin: word, accent: false },
+    { x: L_X, y: L_OY, cw: M_CW, ch: M_CH, fs: M_FS, fin: MARK, accent: true },
+    { x: wx, y: wy, cw: W_CW, ch: W_CH, fs: W_FS, fin: word, accent: false },
   ];
+  const tagY = wy + word.length * W_CH + 14;
+  if (tagY + 16 + 14 > L_H) throw new Error("canvas too short for the subtitle");
   const FPS = 20, N = 100;
   for (const th of THEMES) {
     const back = backdrop(L_W, L_H, th);
     const tag = newGrid(1, TAG.length);
     [...TAG].forEach((ch, i) => (tag[0][i] = { ch, color: th.muted }));
-    const tagSvg = textLayer(tag, (L_W - TAG.length * 8) / 2, L_OY + 9 * M_CH + 14, 8, 16, 8 / ADV);
+    const tagSvg = textLayer(tag, (L_W - TAG.length * 8) / 2, tagY, 8, 16, 8 / ADV);
     const svgs: string[] = [];
     for (let f = 0; f < N; f++) {
       const t = f / FPS;
@@ -179,7 +200,7 @@ async function logo() {
         for (let c = 0; c < g[0].length; c++) {
           const fin = ly.fin[r][c];
           const base = ly.accent ? th.accent : th.fg;
-          const p0 = (ly.x - L_X + c * ly.cw + r * ly.ch) / MAXP;
+          const p0 = (ly.x - L_X + c * ly.cw + ly.y - L_OY + r * ly.ch) / MAXP;
           const p = clamp(p0 + (rnd(1, c, r, li) - 0.5) * 0.12);
           // dissolve 0.4-0.6 s, scrambled, decode settles 1.2-2.0 s (diagonal wave from top-left)
           let ch = fin, color = base;
@@ -197,7 +218,7 @@ async function logo() {
           }
           g[r][c] = { ch, color };
         }
-      body += textLayer(g, ly.x, L_OY, ly.cw, ly.ch, ly.fs);
+      body += textLayer(g, ly.x, ly.y, ly.cw, ly.ch, ly.fs);
       });
       svgs.push(svgDoc(L_W, L_H, th, back, body + tagSvg));
     }
