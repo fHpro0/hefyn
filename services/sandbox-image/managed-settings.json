@@ -1,0 +1,20 @@
+{
+  "allowedHttpHookUrls": ["http://127.0.0.1:47000/hooks/*"],
+  "permissions": {
+    "deny": ["WebSearch", "WebFetch"]
+  },
+  "hooks": {
+    "UserPromptSubmit": [{ "hooks": [{ "type": "http", "url": "http://127.0.0.1:47000/hooks/UserPromptSubmit", "timeout": 10 }] }],
+    "PreToolUse": [{ "hooks": [{ "type": "http", "url": "http://127.0.0.1:47000/hooks/PreToolUse", "timeout": 10 }] }],
+    "PermissionRequest": [{ "hooks": [{ "type": "http", "url": "http://127.0.0.1:47000/hooks/PermissionRequest", "timeout": 3600 }] }],
+    "PostToolUse": [{ "hooks": [{ "type": "http", "url": "http://127.0.0.1:47000/hooks/PostToolUse", "timeout": 10 }] }],
+    "PostToolUseFailure": [{ "hooks": [{ "type": "http", "url": "http://127.0.0.1:47000/hooks/PostToolUseFailure", "timeout": 10 }] }],
+    "Notification": [{ "hooks": [{ "type": "http", "url": "http://127.0.0.1:47000/hooks/Notification", "timeout": 10 }] }],
+    "Stop": [{ "hooks": [{ "type": "http", "url": "http://127.0.0.1:47000/hooks/Stop", "timeout": 10 }] }],
+    "StopFailure": [{ "hooks": [{ "type": "http", "url": "http://127.0.0.1:47000/hooks/StopFailure", "timeout": 10 }] }],
+    "SubagentStart": [{ "hooks": [{ "type": "http", "url": "http://127.0.0.1:47000/hooks/SubagentStart", "timeout": 10 }] }],
+    "SubagentStop": [{ "hooks": [{ "type": "http", "url": "http://127.0.0.1:47000/hooks/SubagentStop", "timeout": 10 }] }],
+    "SessionStart": [{ "hooks": [{ "type": "http", "url": "http://127.0.0.1:47000/hooks/SessionStart", "timeout": 10 }] }],
+    "SessionEnd": [{ "hooks": [{ "type": "http", "url": "http://127.0.0.1:47000/hooks/SessionEnd", "timeout": 10 }] }]
+  }
+}

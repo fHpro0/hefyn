@@ -1,71 +1,58 @@
-import { BarChart3, CornerDownLeft, Cpu, Folder, MessageSquare, Monitor, Moon, PanelRight, Plug, Plus, Search, Settings, Shield, SquareTerminal, Store, Sun, Users, PackageCheck, type LucideIcon } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { can, type Me } from './api';
+import { Activity, Cpu, MessageSquare, Monitor, Moon, Plus, Search, SquareTerminal, Sun } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from '@/ui/command';
+import { type Me, type ModuleCommand } from './api';
+import type { Thread } from './chat-actions';
+import type { PaletteItem, WebModule } from '../modules/registry';
+import { iconFor } from './icons';
 import { setTheme } from './theme';
 import { Kbd, shortcut } from './ui';
 
-export interface Thread { id: string; title: string; createdAt?: string }
-interface Item { id: string; label: string; group: string; Icon: LucideIcon; keys?: string; run: () => void }
+export type { Thread };
+type Item = PaletteItem;
 
 // Command palette (⌘K): every main action is reachable here.
-export default function Palette({ me, threads, onClose }: { me: Me; threads: Thread[]; onClose: () => void }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const list = useRef<HTMLDivElement>(null);
-  const [q, setQ] = useState('');
-  const [sel, setSel] = useState(0);
-  useEffect(() => { ref.current?.showModal(); }, []);
+export default function Palette({ me, commands, mods, threads, initial = '', onClose }: { me: Me; commands: ModuleCommand[]; mods: WebModule[]; threads: Thread[]; initial?: string; onClose: () => void }) {
+  const [q, setQ] = useState(initial);
   const go = (href: string) => () => { location.href = href; };
-  const toggle = (what: 'ledger' | 'terminal') => () => { location.pathname === '/' ? dispatchEvent(new CustomEvent('hefyn-toggle', { detail: what })) : (location.href = '/'); };
+  const toggle = (what: 'terminal') => () => { location.pathname === '/' ? dispatchEvent(new CustomEvent('hefyn-toggle', { detail: what })) : (location.href = '/'); };
   const items = useMemo<Item[]>(() => {
     const it: Item[] = [
       { id: 'new', label: 'New chat', group: 'Actions', Icon: Plus, keys: shortcut('N'), run: () => { if (location.pathname === '/') { location.hash = ''; dispatchEvent(new Event('hefyn-newchat')); } else location.href = '/'; } },
-      { id: 'ledger', label: 'Toggle the privacy ledger', group: 'Actions', Icon: PanelRight, keys: shortcut('L'), run: toggle('ledger') },
+      ...mods.flatMap((m) => m.paletteCommands?.() ?? []), // the modules' own entries (projects: new project / folder, project settings)
       { id: 'terminal', label: 'Toggle the terminal', group: 'Actions', Icon: SquareTerminal, keys: shortcut('J'), run: toggle('terminal') },
-      { id: 'connect', label: 'Connect a model', group: 'Actions', Icon: Cpu, run: go(can(me, 'models.manage') ? '/settings/models#connect' : '/settings/connectors#connect') },
-      { id: 'files', label: 'Files', group: 'Go to', Icon: Folder, run: go('/files') },
-      { id: 'hub', label: 'Hub', group: 'Go to', Icon: Store, run: go('/hub') },
-      ...(can(me, 'hub.approve') ? [{ id: 'review', label: 'Hub review', group: 'Go to', Icon: PackageCheck, run: go('/hub/review') }] : []),
-      ...([['Models', '/settings/models', Cpu, 'models.manage'], ['Users', '/settings/users', Users, 'users.manage'], ['Roles', '/settings/roles', Shield, 'roles.manage'], ['Connectors', '/settings/connectors', Plug, undefined], ['Usage', '/usage', BarChart3, undefined]] as const)
-        .filter(([, , , p]) => !p || can(me, p)).map(([l, h, Icon]) => ({ id: h, label: `Settings: ${l}`, group: 'Go to', Icon: Icon as LucideIcon, run: go(h) })),
+      ...(location.pathname === '/' && location.hash.length > 1 ? [{ id: 'trace', label: 'Open trace of this chat', group: 'Actions', Icon: Activity, run: go(`/trace${location.hash}`) }] : []),
+      { id: 'connect', label: 'Connect a provider', group: 'Actions', Icon: Cpu, run: go('/settings/providers#connect') },
+      ...commands.map((c) => ({ id: c.href, label: c.label, group: 'Go to', Icon: iconFor(c.icon), run: go(c.href) })),
       { id: 'theme-system', label: 'Theme: match the system', group: 'Theme', Icon: Monitor, run: () => setTheme('system') },
       { id: 'theme-light', label: 'Theme: light', group: 'Theme', Icon: Sun, run: () => setTheme('light') },
       { id: 'theme-dark', label: 'Theme: dark', group: 'Theme', Icon: Moon, run: () => setTheme('dark') },
-      ...threads.map((t) => ({ id: `t-${t.id}`, label: t.title, group: 'Threads', Icon: MessageSquare, run: go(`/#${t.id}`) })),
+      ...threads.map((t) => ({ id: `t-${t.id}`, label: t.title, group: 'Threads', Icon: MessageSquare, extra: mods.map((m) => m.chatLocation?.(t)).find(Boolean), run: go(`/#${t.id}`) })),
     ];
     const s = q.trim().toLowerCase();
-    const out = s ? it.filter((x) => `${x.group} ${x.label}`.toLowerCase().includes(s)) : it;
-    return s ? [...out, { id: 'hub-search', label: `Search the hub for “${q.trim()}”`, group: 'Hub', Icon: Search, run: go(`/hub?q=${encodeURIComponent(q.trim())}`) }] : out;
-  }, [q, threads, me]);
-  useEffect(() => setSel(0), [q]);
-  useEffect(() => { list.current?.querySelector('[aria-selected=true]')?.scrollIntoView({ block: 'nearest' }); }, [sel]);
-  const run = (i?: Item) => { if (!i) return; ref.current?.close(); i.run(); };
+    return s ? it.filter((x) => `${x.group} ${x.label} ${x.extra ?? ''}`.toLowerCase().includes(s)) : it;
+  }, [q, threads, mods, me, commands]);
+  const run = (i: Item) => { onClose(); i.run(); };
+  const groups = items.reduce<[string, Item[]][]>((g, x) => { const last = g.at(-1); last?.[0] === x.group ? last[1].push(x) : g.push([x.group, [x]]); return g; }, []);
+  // Filtering stays ours (group + label match), so cmdk's own is off.
   return (
-    <dialog ref={ref} aria-label="Command palette" onClose={onClose} onClick={(e) => e.target === ref.current && ref.current.close()}
-      className="float m-0 mx-auto mt-[12vh] w-[min(36rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl p-0 text-foreground ring-1 ring-border backdrop:bg-black/40">
-      <div className="flex items-center gap-2 border-b border-border px-3">
-        <Search size={16} strokeWidth={1.75} aria-hidden className="text-muted" />
-        <input autoFocus role="combobox" aria-expanded aria-controls="palette-list" aria-activedescendant={items[sel] ? `p-${items[sel].id}` : undefined} aria-label="Search commands" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Type a command or search threads"
-          className="h-11 grow bg-transparent text-sm outline-none placeholder:text-muted"
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowDown') { e.preventDefault(); setSel((sel + 1) % Math.max(items.length, 1)); }
-            else if (e.key === 'ArrowUp') { e.preventDefault(); setSel((sel - 1 + items.length) % Math.max(items.length, 1)); }
-            else if (e.key === 'Enter') { e.preventDefault(); run(items[sel]); }
-          }} />
-        <Kbd>Esc</Kbd>
-      </div>
-      <div id="palette-list" ref={list} role="listbox" className="max-h-80 overflow-y-auto p-1.5">
-        {!items.length && <p className="px-3 py-6 text-center text-sm text-muted">Nothing matches. Try another word.</p>}
-        {items.map((x, i) => (
-          <div key={x.id}>
-            {(i === 0 || items[i - 1].group !== x.group) && <div className="px-2.5 pt-2 pb-1 text-xs font-medium text-muted">{x.group}</div>}
-            <div id={`p-${x.id}`} role="option" aria-selected={i === sel} onMouseMove={() => setSel(i)} onClick={() => run(x)}
-              className={`flex cursor-default items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] ${i === sel ? 'bg-foreground/[0.07]' : ''}`}>
-              <x.Icon size={16} strokeWidth={1.75} aria-hidden className="shrink-0 text-muted" /><span className="min-w-0 grow truncate">{x.label}</span>
-              {x.keys && <Kbd>{x.keys}</Kbd>}{i === sel && !x.keys && <CornerDownLeft size={13} aria-hidden className="text-muted" />}
-            </div>
-          </div>
-        ))}
-      </div>
-    </dialog>
+    <CommandDialog open onOpenChange={(o) => !o && onClose()} title="Command palette" description="Run a command or search threads" className="top-[12vh] translate-y-0 sm:max-w-xl">
+      <Command shouldFilter={false} label="Command palette" className="rounded-none! p-0">
+        <CommandInput aria-label="Search commands" value={q} onValueChange={setQ} placeholder="Type a command or search threads" />
+        <CommandList className="max-h-80 p-1.5">
+          <CommandEmpty className="px-3 text-muted-foreground">Nothing matches. Try another word.</CommandEmpty>
+          {groups.map(([group, list]) => (
+            <CommandGroup key={group} heading={group}>
+              {list.map((x) => (
+                <CommandItem key={x.id} value={x.id} onSelect={() => run(x)} className="text-[13px]">
+                  <x.Icon size={16} strokeWidth={1.75} aria-hidden className="shrink-0 text-muted-foreground" /><span className="min-w-0 grow truncate">{x.label}</span>{x.extra && <span className="shrink-0 text-xs text-muted-foreground">{x.extra}</span>}
+                  {x.keys && <CommandShortcut><Kbd>{x.keys}</Kbd></CommandShortcut>}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ))}
+        </CommandList>
+      </Command>
+    </CommandDialog>
   );
 }

@@ -3,22 +3,18 @@ import { mkdirSync, mkdtempSync, symlinkSync, utimesSync, writeFileSync, existsS
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { Hono } from 'hono';
-import { createEditTool, createReadTool, createWriteTool, type Sandbox } from '@flue/runtime';
 import { cleanupTmp, deleteConversationTmp, deleteUserStorage, userFs } from '../src/server/storage.ts';
-import { userSandbox, userSandboxFactory } from '../src/server/storage-sandbox.ts';
-import { storageRoutes } from '../src/server/storage-routes.ts';
 
+// The confined host filesystem (storage.ts userFs): non-shell users' files and every conversation's scratch dir. (The Files page, uploads and the Flue sandbox on top moved to old/.)
 const data = mkdtempSync(join(tmpdir(), 'hefyn-storage-'));
 process.env.HEFYN_DATA_DIR = data;
 const rejects = (p: Promise<unknown>) => assert.rejects(p);
-const sb = (userId = 'alice', conversationId = 'u_alice_01A') => userSandbox({ userId, conversationId });
-const text = (r: any) => r.content.map((c: any) => c.text ?? '').join('');
+const sb = (userId = 'alice', conversationId = 'u_alice_01A') => userFs({ userId, conversationId });
 
-test('sandbox roundtrip and typed as a Flue Sandbox', async () => {
-  const s: Sandbox = sb();
+test('filesystem roundtrip', async () => {
+  const s = sb();
   await s.writeFile('/files/a/b.txt', 'hello'); // parents created lazily
-  assert.equal(await s.readFile('a/b.txt'), 'hello'); // relative -> cwd /files
+  assert.equal(await s.readFile('/files/a/b.txt'), 'hello');
   assert.deepEqual(await s.readdir('/'), ['files', 'tmp']);
   assert.equal((await s.stat('/files/a')).isDirectory, true);
   assert.equal(await s.exists('/files/nope'), false);
@@ -77,10 +73,6 @@ test('quota and upload limits', async () => {
   } finally { delete process.env.HEFYN_USER_QUOTA_MB; delete process.env.HEFYN_MAX_UPLOAD_MB; }
 });
 
-test('exec is unsupported', async () => {
-  await assert.rejects(sb().exec('echo hi'), /container sandbox/);
-});
-
 test('tmp isolation between conversations and users', async () => {
   await sb('u1', 'c1').writeFile('/tmp/f', 'one');
   await sb('u1', 'c2').writeFile('/tmp/f', 'two');
@@ -90,8 +82,8 @@ test('tmp isolation between conversations and users', async () => {
   assert.equal(await sb('u2', 'c1').readFile('/tmp/f'), 'three');
   await rejects(sb('u1', 'c1').readFile('/tmp/../../c2/f'));
   await rejects(userFs({ userId: 'u1' }).readFile('/tmp/f')); // no conversation -> no tmp
-  assert.throws(() => userSandbox({ userId: '../x', conversationId: 'c' }));
-  await rejects(sb('u1', 'c1').writeFile('/files/x', 'x').then(() => userSandbox({ userId: 'u1', conversationId: '../c2' }).readFile('/tmp/f')));
+  assert.throws(() => userFs({ userId: '../x', conversationId: 'c' }));
+  await rejects(sb('u1', 'c1').writeFile('/files/x', 'x').then(() => userFs({ userId: 'u1', conversationId: '../c2' }).readFile('/tmp/f')));
 });
 
 test('cleanup and deletion', async () => {
@@ -111,65 +103,3 @@ test('cleanup and deletion', async () => {
   await rejects(deleteUserStorage('../x'));
 });
 
-test('router: upload / list / download / delete / mkdir / rename / usage / keep', async () => {
-  const app = new Hono();
-  app.route('/', storageRoutes((c) => c.req.header('x-user') || undefined));
-  const as = (user: string) => (path: string, init: RequestInit = {}) => app.request(path, { ...init, headers: { ...init.headers, 'x-user': user } });
-  const ada = as('ada'), eve = as('eve');
-  assert.equal((await app.request('/files')).status, 401);
-
-  const form = () => { const f = new FormData(); f.append('f', new File(['<script>alert(1)</script>'], 'a.html')); f.append('f', new File(['two'], '../../evil.txt')); return f; };
-  let r = await ada('/files/upload?dir=docs', { method: 'POST', body: form() });
-  assert.equal(r.status, 200);
-  assert.deepEqual((await r.json() as any).saved.map((s: any) => s.path), ['/docs/a.html', '/docs/evil.txt']);
-  r = await ada('/files/upload?dir=docs', { method: 'POST', body: form() }); // conflict -> unique names
-  assert.deepEqual((await r.json() as any).saved.map((s: any) => s.name), ['a (1).html', 'evil (1).txt']);
-
-  const list = await (await ada('/files?path=docs')).json() as any;
-  assert.equal(list.entries.length, 4);
-  assert.equal((await (await eve('/files?path=docs')).json() as any).entries?.length, undefined); // eve sees nothing of ada's
-
-  r = await ada('/files/download?path=docs/a.html');
-  assert.equal(r.headers.get('content-type'), 'application/octet-stream');
-  assert.match(r.headers.get('content-disposition')!, /^attachment/);
-  assert.equal(await r.text(), '<script>alert(1)</script>');
-  assert.equal((await ada('/files/download?path=../../etc/passwd')).status, 403);
-  assert.equal((await ada('/files/download?path=docs')).status, 400);
-
-  assert.equal((await ada('/files/mkdir', { method: 'POST', body: JSON.stringify({ path: 'x/y' }) })).status, 200);
-  assert.equal((await ada('/files/rename', { method: 'POST', body: JSON.stringify({ from: 'docs/a.html', to: 'x/y/b.html' }) })).status, 200);
-  assert.equal((await ada('/files/rename', { method: 'POST', body: JSON.stringify({ from: 'docs/evil.txt', to: 'x/y/b.html' }) })).status, 409);
-  assert.equal((await ada('/files/rename', { method: 'POST', body: JSON.stringify({ from: 'docs/evil.txt', to: '../b' }) })).status, 403);
-
-  // keep: agent writes to tmp, user keeps it; foreign conversation refused
-  await sb('ada', 'u_ada_01J').writeFile('/tmp/out/report.md', '# r');
-  const keep = (user: typeof ada, conversationId: string) => user('/files/keep', { method: 'POST', body: JSON.stringify({ conversationId, path: 'out/report.md' }) });
-  assert.equal((await keep(eve, 'u_ada_01J')).status, 403);
-  assert.equal((await keep(ada, 'u_ada_01J')).status, 200);
-  assert.equal(await (await ada('/files/download?path=report.md')).text(), '# r');
-  assert.equal((await ada('/files/keep', { method: 'POST', body: JSON.stringify({ conversationId: 'u_ada_01J', path: '../../../etc/passwd' }) })).status, 403);
-
-  const u = await (await ada('/files/usage')).json() as any;
-  assert.ok(u.used > 0 && u.quota === 1024 * 1024 * 1024);
-  assert.equal((await ada('/files?path=docs', { method: 'DELETE' })).status, 200);
-  assert.equal((await ada('/files?path=')).status, 200);
-  assert.equal((await ada('/files?path=docs')).status, 404);
-
-  process.env.HEFYN_USER_QUOTA_MB = '0';
-  try { assert.equal((await ada('/files/upload', { method: 'POST', body: form() })).status, 413); } finally { delete process.env.HEFYN_USER_QUOTA_MB; }
-});
-
-test('the real Flue file tools run against the confined sandbox', async () => {
-  const s = sb('tools', 'u_tools_01K');
-  const run = (t: any, args: object) => t.execute('call', args);
-  assert.match(text(await run(createWriteTool(s), { path: '/files/notes/a.txt', content: 'alpha\nbeta\n' })), /./);
-  assert.match(text(await run(createReadTool(s), { path: '/files/notes/a.txt' })), /beta/);
-  await run(createEditTool(s), { path: '/files/notes/a.txt', oldText: 'beta', newText: 'gamma' });
-  const f = userSandboxFactory({ userId: 'tools', conversationId: 'u_tools_01K' });
-  assert.deepEqual((f.tools!(s, { subagents: {} }) as any[]).map((t) => t.name), ['read', 'write', 'edit', 'list']); // no exec-backed tools
-  const list = (f.tools!(s, { subagents: {} }) as any[]).find((t) => t.name === 'list');
-  assert.match(text(await run(list, { path: '/files', recursive: true })), /notes\/a\.txt/);
-  assert.equal(text(await run(list, { path: '/files/../..' })), '/files/\n/tmp/'); // Flue collapses .. before the driver: lands on the virtual root
-  await assert.rejects(run(createWriteTool(s), { path: '/files/../../x', content: 'x' }));
-  await assert.rejects(run(createReadTool(s), { path: '/etc/passwd' }));
-});

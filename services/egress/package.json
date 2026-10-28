@@ -2,6 +2,6 @@
   "name": "hefyn-egress",
   "type": "module",
   "private": true,
-  "engines": { "node": ">=22.18" },
-  "scripts": { "start": "node src/server.ts" }
+  "engines": { "bun": ">=1.4.4" },
+  "scripts": { "start": "bun src/server.ts" }
 }

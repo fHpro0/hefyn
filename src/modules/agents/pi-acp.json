@@ -1,0 +1,49 @@
+{
+  "kind": "agent",
+  "id": "pi-acp",
+  "name": "Pi",
+  "description": "A small, fast open-source coding agent.",
+  "distribution": { "registry": "pi-acp" },
+  "api": "anthropic",
+  "cliVersion": { "packageJson": "node_modules/@earendil-works/pi-coding-agent/package.json" },
+  "asksBeforeActing": false,
+  "sharedLogin": true,
+  "login": {
+    "flow": "terminal",
+    "command": "exec {{installDir}}/node_modules/.bin/pi",
+    "home": { "env": "PI_CODING_AGENT_DIR" },
+    "status": { "format": "file", "signedIn": "auth.json" },
+    "logout": "rm -f \"$PI_CODING_AGENT_DIR/auth.json\"",
+    "hosts": ["auth.openai.com:443", "chatgpt.com:443", "api.openai.com:443", "github.com:443", "api.github.com:443"],
+    "verified": false
+  },
+  "launch": { "npm": { "package": "pi-acp", "bin": "pi-acp", "extra": ["@earendil-works/pi-coding-agent@1.4.0"], "check": ["node_modules/.bin/pi"] } },
+  "terminal": { "command": "exec {{installDir}}/node_modules/.bin/pi --continue" },
+  "env": {
+    "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+    "PI_ACP_PI_COMMAND": "{{installDir}}/node_modules/.bin/pi",
+    "ANTHROPIC_API_KEY": "{{dummyKey}}",
+    "PI_OFFLINE": "1",
+    "PI_SKIP_VERSION_CHECK": "1",
+    "PI_TELEMETRY": "0"
+  },
+  "config": { "dir": "/tmp/.pi/agent", "instructionsFile": "AGENTS.md", "skillsDir": "/tmp/.pi/agent/skills", "mcpConfig": "/tmp/.pi/agent/mcp.json" },
+  "mcpServers": { "unsupported": true },
+  "headless": {
+    "command": "exec {{installDir}}/node_modules/.bin/pi -p \"$@\"",
+    "readOnly": "exec {{installDir}}/node_modules/.bin/pi -p --tools read,grep,find,ls \"$@\""
+  },
+  "files": [
+    { "path": "/tmp/.pi/agent/settings.json", "format": "json", "when": "assistant", "content": { "$when": "assistant.model", "defaultProvider": "{{provider.id}}", "defaultModel": "{{assistant.model}}" } }
+  ],
+  "providers": [
+    { "api": "anthropic", "files": [{ "path": "/tmp/.pi/agent/models.json", "format": "json-merge", "content": { "providers": { "anthropic": { "baseUrl": "{{gatewayBase}}" } } } }] },
+    {
+      "api": "openai-chat",
+      "files": [{
+        "path": "/tmp/.pi/agent/models.json", "format": "json-merge",
+        "content": { "providers": { "{{provider.id}}": { "baseUrl": "{{gatewayBase}}/v1", "api": "openai-completions", "apiKey": "{{dummyKey}}", "models": [{ "$when": "assistant.model", "id": "{{assistant.model}}" }] } } }
+      }]
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "kind": "agent",
+  "id": "codex-acp",
+  "name": "Codex",
+  "description": "OpenAI's coding agent.",
+  "distribution": { "registry": "codex-acp" },
+  "api": "openai-responses",
+  "cliVersion": { "packageJson": "node_modules/@openai/codex/package.json" },
+  "asksBeforeActing": true,
+  "sharedLogin": false,
+  "login": {
+    "flow": "device",
+    "command": "exec {{installDir}}/node_modules/.bin/codex login --device-auth",
+    "home": { "env": "CODEX_HOME" },
+    "status": { "format": "exit", "command": "exec {{installDir}}/node_modules/.bin/codex login status" },
+    "logout": "exec {{installDir}}/node_modules/.bin/codex logout",
+    "codePattern": "\\b[A-Z0-9]{4,5}-[A-Z0-9]{4,6}\\b",
+    "hosts": ["auth.openai.com:443", "chatgpt.com:443", "api.openai.com:443"],
+    "verified": false
+  },
+  "launch": { "npm": { "package": "@agentclientprotocol/codex-acp", "bin": "codex-acp", "check": ["node_modules/.bin/codex"] } },
+  "terminal": {
+    "command": "exec {{installDir}}/node_modules/.bin/codex --no-daemon",
+    "resume": {
+      "sessionId": "uuid",
+      "command": "if ls /tmp/.codex/sessions/*/*/*/rollout-*{{sessionId}}.jsonl >/dev/null 2>&1; then exec {{installDir}}/node_modules/.bin/codex --no-daemon resume {{sessionId}}; else exec {{installDir}}/node_modules/.bin/codex --no-daemon; fi"
+    }
+  },
+  "env": {
+    "CODEX_HOME": "/tmp/.codex",
+    "HEFYN_GATEWAY_KEY": "{{dummyKey}}",
+    "OPENAI_API_KEY": "{{dummyKey}}",
+    "CODEX_PATH": "{{shim.codex-shim.mjs}}",
+    "CODEX_REAL": "{{installDir}}/node_modules/.bin/codex"
+  },
+  "config": { "dir": "/tmp/.codex", "instructionsFile": "AGENTS.md", "skillsDir": "/tmp/.codex/skills", "mcpConfig": "/tmp/.codex/config.toml ([mcp_servers.<name>])" },
+  "mcpServers": { "path": "/tmp/.codex/config.toml", "format": "text", "content": ["[mcp_servers.{{server.name}}]", "url = {{server.url|json}}", "startup_timeout_sec = 20", "tool_timeout_sec = 3600", ""] },
+  "headless": {
+    "command": "exec {{installDir}}/node_modules/.bin/codex exec --skip-git-repo-check --sandbox workspace-write \"$@\"",
+    "readOnly": "exec {{installDir}}/node_modules/.bin/codex exec --skip-git-repo-check --sandbox read-only \"$@\""
+  },
+  "helperAllow": { "path": "/tmp/.codex/rules/default.rules", "format": "text", "rule": "prefix_rule(pattern=[\"sh\",\"{{helper.script}}\"], decision=\"allow\")" },
+  "files": [
+    {
+      "path": "/tmp/.codex/config.toml", "format": "text",
+      "content": [
+        "model = {{assistant.model|json}}",
+        "model_provider = \"hefyn\"",
+        "check_for_update_on_startup = false",
+        "web_search = \"disabled\"",
+        "approval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }",
+        "sandbox_mode = \"danger-full-access\"",
+        "[projects.\"/files\"]",
+        "trust_level = \"trusted\"",
+        "[analytics]",
+        "enabled = false",
+        "[feedback]",
+        "enabled = false",
+        "[model_providers.hefyn]",
+        "name = \"hefyn\"",
+        "base_url = \"{{gatewayBase}}/v1\"",
+        "wire_api = \"responses\"",
+        "env_key = \"HEFYN_GATEWAY_KEY\"",
+        "requires_openai_auth = false",
+        ""
+      ]
+    },
+    {
+      "path": "/tmp/.codex/rules/default.rules", "format": "text",
+      "content": ["prefix_rule(pattern=[[\"ls\",\"cat\",\"head\",\"tail\",\"pwd\",\"wc\",\"grep\"]], decision=\"allow\")", ""]
+    }
+  ]
+}

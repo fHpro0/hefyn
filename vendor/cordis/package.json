@@ -1,0 +1,13 @@
+{
+  "name": "cordis",
+  "description": "Cordis 4.0.5, vendored from deepseek-ai/deepseek-harness (vendor/cordis); not published to npm. lib/ is built from src/ (bun build + tsc declarations)",
+  "version": "4.0.5",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "license": "MIT",
+  "dependencies": {
+    "@standard-schema/spec": "^1.1.0",
+    "@deepseek-ai/cosmokit": "1.8.6"
+  }
+}

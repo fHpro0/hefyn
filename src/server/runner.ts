@@ -3,7 +3,6 @@ import { posix } from 'node:path';
 import { db } from './appdb.ts';
 import { ContainerFsError, cleanPath, containerFs } from './container-fs.ts';
 import type { Permission } from './permissions.ts';
-import { withAddons } from './storage-addons.ts';
 import { StorageError, maxUploadBytes, quotaBytes, usageBytes, userFs, type Entry } from './storage.ts';
 
 // Container sandbox mode, one per user: a user with `sandbox.shell` (and a configured runner) gets the container for
@@ -49,7 +48,7 @@ export function containerStorage(userId: string, conversationId = 'files') {
     async stat(p: string) { return wrap(() => fs.stat(p)); },
     async list(p: string): Promise<Entry[]> {
       const r = await wrap(async () => { const dir = cleanPath(p); return fs.run(['find', dir + '/', '-mindepth', '1', '-maxdepth', '1', '-printf', '%f\\0%y\\0%s\\0%T@\\0']); });
-      if (r.exitCode !== 0) throw new StorageError(/No such file/.test(r.stderr) ? 404 : 400, `${p}: cannot list`);
+      if (r.exitCode !== 0) throw new StorageError(/No such file/.test(r.stderr) ? 404 : 400, `${p}: ${/No such file/.test(r.stderr) ? 'not found' : 'cannot list'}`);
       const f = r.stdout.split('\0');
       const out: Entry[] = [];
       for (let i = 0; i + 3 < f.length; i += 4) out.push({ name: f[i], type: f[i + 1] === 'l' ? 'symlink' : f[i + 1] === 'd' ? 'dir' : 'file', size: Number(f[i + 2]), mtime: new Date(Number(f[i + 3]) * 1000).toISOString() });
@@ -68,20 +67,19 @@ export function containerStorage(userId: string, conversationId = 'files') {
         if (r.exitCode !== 0) return p;
       }
     },
-    hostPath: undefined as undefined | ((p: string) => Promise<string>),
-    openRead: undefined as undefined | ((real: string) => NodeJS.ReadableStream),
+    async readStream(p: string, size: number) { return fs.readStream(p, size); },
   };
   return self;
 }
 
-/** Storage for the Files API and attachments: the container for shell users, the confined host dir for everyone else; storage add-ons are mounted under /files. */
+/** Storage for the @ popover's files: the container for shell users, the confined host dir for everyone else. */
 export function fsFor(userId: string, conversationId?: string) {
-  return withAddons(shellEnabled(userId) ? containerStorage(userId, conversationId) : userFs({ userId, conversationId }), userId);
+  return shellEnabled(userId) ? containerStorage(userId, conversationId) : userFs({ userId, conversationId });
 }
 
 // ---- built-in managed connector: Playwright (browser) in its own container, started lazily by the runner ----
 export const PLAYWRIGHT = 'builtin:playwright';
-export const PLAYWRIGHT_NOTE = 'Browser pages reach the model as text and as screenshots. GLiNER cannot read images, so by default screenshots are removed from what is sent to the model (it only gets the text of the page). An admin can allow images; they are then sent unredacted and personal data visible on a page reaches the model provider as is.';
+export const PLAYWRIGHT_NOTE = 'Browser pages reach the model as text and as screenshots. The browser has open internet access: page URLs and form input the model writes leave hefyn to the sites it visits, so only enable it for people who may browse.';
 export const playwrightEnabled = (userId: string) =>
   runnerConfigured() && permissionsOf(userId).includes('mcp.run_managed') && !!db.prepare('SELECT 1 FROM user_builtins WHERE user_id = ? AND id = ? AND enabled = 1').get(userId, PLAYWRIGHT);
 export const setPlaywright = (userId: string, on: boolean) => void db.prepare('INSERT OR REPLACE INTO user_builtins (user_id, id, enabled) VALUES (?,?,?)').run(userId, PLAYWRIGHT, on ? 1 : 0);

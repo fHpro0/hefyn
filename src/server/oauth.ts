@@ -1,7 +1,13 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import type { OAuthAuth, ProviderAuthInteraction } from '@earendil-works/pi-ai';
+import { db } from './appdb.ts';
 import { CompanyCredentialStore, DbCredentialStore, oauthOf } from './connectors.ts';
-import { withStamp } from './context.ts';
+
+/** Stable id of this installation, created on first use; OpenAI's ChatGPT login sends it as the agent host id. */
+export function deviceId() {
+  db.prepare("INSERT OR IGNORE INTO instance_settings (key, value) VALUES ('device_id', ?)").run(randomUUID());
+  return (db.prepare("SELECT value FROM instance_settings WHERE key = 'device_id'").get() as { value: string }).value;
+}
 
 // Web adaptation of pi-ai's CLI login flows. The flow runs server-side exactly as in the CLI; its prompts and
 // notifications are surfaced to the browser: auth URL / device code out, pasted code or redirect URL in.
@@ -26,6 +32,7 @@ export const flowStatus = (userId: string, id: string) => { const f = find(userI
 export async function startFlow(userId: string, provider: string, oauth: OAuthAuth | undefined = oauthOf(provider), scope: 'me' | 'company' = 'me') {
   if (!oauth) throw new Error(`${provider} has no OAuth login`);
   sweep();
+  for (const old of [...flows.values()]) if (old.userId === userId && old.provider === provider && old.state === 'pending') { old.abort.abort(); flows.delete(old.id); await Promise.race([old.settled, new Promise((r) => setTimeout(r, 2000).unref())]); } // a retry replaces the abandoned attempt, which frees its callback port
   const abort = new AbortController();
   let ready!: () => void;
   const first = new Promise<void>((r) => (ready = r));
@@ -42,14 +49,19 @@ export async function startFlow(userId: string, provider: string, oauth: OAuthAu
       return new Promise<string>((res, rej) => { f.paste = res; p.signal?.addEventListener('abort', () => rej(new Error('cancelled'))); abort.signal.addEventListener('abort', () => rej(new Error('cancelled'))); });
     },
   };
-  f.settled = withStamp('auth', () => oauth.login(interaction, { agentName: 'hefyn' })) // login flows talk to token endpoints only
+  f.settled = oauth.login(interaction, { agentName: 'hefyn', getDeviceId: deviceId })
     .then((cred) => (scope === 'company' ? new CompanyCredentialStore() : new DbCredentialStore(userId)).modify(provider, async () => cred)) // company: the provider is then available to everyone
     .then(() => { f.state = 'done'; }, (e) => { f.state = 'error'; f.error = (e as Error).message; })
     .finally(ready);
   flows.set(f.id, f);
   await Promise.race([first, new Promise((r) => setTimeout(r, 8000).unref())]);
   if (f.state === 'error') throw new Error(f.error);
-  return { flowId: f.id, authUrl: f.authUrl, device: f.device, needsPaste: !f.device, state: f.state };
+  return { flowId: f.id, authUrl: f.authUrl, device: f.device, needsPaste: !f.device, callback: loopbackRedirect(f.authUrl), state: f.state };
+}
+
+/** The provider sends the browser back to a port on this machine (docker-compose publishes it on loopback), so pasting is only the fallback. */
+function loopbackRedirect(authUrl?: string) {
+  try { return /^(127\.0\.0\.1|localhost)$/.test(new URL(new URL(authUrl!).searchParams.get('redirect_uri')!).hostname); } catch { return false; }
 }
 
 /** The user pastes the authorization code or the redirect URL (providers with a fixed redirect URI). */

@@ -1,10 +1,14 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { gunzipSync } from 'node:zlib';
+import { type TarEntry, readTar } from '../assistants/tar.ts';
 import { db } from './appdb.ts';
 import type { Me } from './guard.ts';
-import { assertPublicUrl } from './mcp.ts';
+import { ManifestError, parseManifest } from '../modules/manifest.ts';
+import { THINKING_LEVELS, validThinking } from './agent-prefs.ts';
+import { gitlabArchive, parseGitlabUrl, resolveSource, type GitlabTarget } from './hub-sources.ts';
+import { assertPublicHost, assertPublicUrl } from './mcp.ts';
 import type { Permission } from './permissions.ts';
-import { guard as sidecarGuard } from './privacy.ts';
+import { guard as heuristicGuard } from './hub-guard.ts';
 
 // Skill hub core (docs/HUB-API.md, docs/HUB.md). Everything here parses text; nothing from a package is ever executed.
 
@@ -14,11 +18,13 @@ export class HubError extends Error {
 }
 const fail = (status: HubError['status'], msg: string): never => { throw new HubError(status, msg); };
 
-export type Kind = 'skill' | 'agent' | 'mcp' | 'bundle';
+export type Kind = 'skill' | 'agent' | 'mcp' | 'bundle' | 'module' | 'assistant'; // module: carries hefyn.module.json, installed by src/modules/installed.ts; assistant: a user's Assistant shared with the team (assistant-share.ts), reviewed here, never installed
+/** Called after a package of that kind was approved or rejected in the review queue (assistant-share.ts registers). */
+export const reviewHooks: { assistant?: (id: string, decision: 'approved' | 'rejected', note?: string) => void } = {};
 type Files = Record<string, string>;
 type Auth = 'none' | 'bearer' | 'oauth';
 export interface SkillItem { name: string; description: string; instructions: string; files: Files; dir?: string }
-export interface AgentItem { name: string; description: string; instructions: string; model?: string; skills: string[]; file?: string }
+export interface AgentItem { name: string; description: string; instructions: string; model?: string; thinking?: string; skills: string[]; file?: string }
 export interface McpItem { name: string; url: string; transport: 'streamable-http' | 'sse'; auth: Auth; storage?: true }
 interface Items { skills: SkillItem[]; agents: AgentItem[]; mcp: McpItem[] }
 interface Manifest { items: Items; ignored: string[]; needsRunner: string[]; plugin?: Record<string, unknown> }
@@ -47,8 +53,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS installs_uniq ON installs (package_id, target,
 }
 ensureHubTables();
 
-// Guard is injectable so tests never need the redaction sidecar.
-let guardFn: (text: string) => Promise<{ flagged: boolean; reason?: string }> = sidecarGuard;
+// Guard is injectable so tests can force a verdict.
+let guardFn: (text: string) => Promise<{ flagged: boolean; reason?: string }> = heuristicGuard;
 export const setGuard = (f: typeof guardFn) => void (guardFn = f);
 
 const has = (me: Pick<Me, 'permissions'>, p: Permission) => me.permissions.includes(p);
@@ -102,7 +108,7 @@ export function collect(files: Files, fallbackName = 'unnamed'): Manifest {
   for (const p of Object.keys(files).sort()) {
     if (!/^agents\/[^/]+\.md$/.test(p)) continue;
     const { data, body } = frontmatter(files[p]!); // `tools` is deliberately dropped
-    m.items.agents.push({ name: slug(data.name || p.slice(7, -3)), description: data.description ?? '', instructions: body.trim(), ...(data.model ? { model: data.model } : {}), skills: list(data.skills), file: p });
+    m.items.agents.push({ name: slug(data.name || p.slice(7, -3)), description: data.description ?? '', instructions: body.trim(), ...(data.model ? { model: data.model } : {}), ...(validThinking(data.thinking) && data.thinking ? { thinking: data.thinking } : {}), skills: list(data.skills), file: p });
   }
   const servers = { ...(json(files['.mcp.json'])?.mcpServers ?? json(files['.mcp.json']) ?? {}), ...(json(files['.claude-plugin/plugin.json'])?.mcpServers ?? {}) };
   for (const [raw, e] of Object.entries<any>(servers)) {
@@ -145,6 +151,8 @@ export function draftsFromTree(files: Files, o: { fallbackName: string; plugin?:
 
 // ---------- UI-authored packages ----------
 
+const MODULE_FILE = 'hefyn.module.json';
+
 const fm = (o: Record<string, string | undefined>) => '---\n' + Object.entries(o).filter(([, v]) => v).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join('\n') + '\n---\n';
 const str = (v: unknown, what: string, max = 200_000) => {
   if (typeof v !== 'string' || !v.trim() || v.length > max) fail(400, `${what} is required`);
@@ -153,6 +161,12 @@ const str = (v: unknown, what: string, max = 200_000) => {
 
 export function draftFromBody(b: any): Draft {
   const kind = b?.kind as Kind;
+  if (kind === 'module') {
+    let m;
+    try { m = parseManifest(b.manifest); } catch (e) { if (e instanceof ManifestError) fail(400, e.message); throw e; }
+    if (b.name !== undefined && b.name !== m.id) fail(400, 'name must be the module id');
+    return { kind, name: m.id, description: m.description ?? m.name, version: m.version, files: { [MODULE_FILE]: JSON.stringify(m, null, 2) }, manifest: emptyManifest() };
+  }
   const name = str(b?.name, 'name', 64);
   if (!NAME.test(name)) fail(400, 'name may contain letters, digits, dot, dash and underscore (max 64)');
   const description = str(b?.description ?? (kind === 'mcp' ? b?.url : undefined), 'description', 2000);
@@ -167,7 +181,8 @@ export function draftFromBody(b: any): Draft {
     return { kind, name, description, files, manifest: collect(files, name) };
   }
   if (kind === 'agent') {
-    const files = { [`agents/${name}.md`]: fm({ name, description, model: b.model || undefined, skills: Array.isArray(b.skills) ? b.skills.join(', ') : undefined }) + '\n' + str(b.instructions, 'instructions') + '\n' };
+    if (!validThinking(b.thinking)) fail(400, 'thinking must be one of ' + THINKING_LEVELS.join(', '));
+    const files = { [`agents/${name}.md`]: fm({ name, description, model: b.model || undefined, thinking: b.thinking || undefined, skills: Array.isArray(b.skills) ? b.skills.join(', ') : undefined }) + '\n' + str(b.instructions, 'instructions') + '\n' };
     return { kind, name, description, files, manifest: collect(files, name) };
   }
   if (kind === 'mcp') {
@@ -178,7 +193,7 @@ export function draftFromBody(b: any): Draft {
     if (!manifest.items.mcp.length) fail(400, manifest.ignored[0] ?? 'invalid MCP server');
     return { kind, name, description, files, manifest };
   }
-  return fail(400, 'kind must be skill, agent or mcp');
+  return fail(400, 'kind must be skill, agent, mcp or module');
 }
 
 function safePath(p: unknown): string {
@@ -193,35 +208,11 @@ function checkSize(files: Files) {
 
 // ---------- GitHub import (tarball from codeload; no git, no new dependencies) ----------
 
-export interface TarEntry { path: string; type: string; data: Buffer }
-
-/** Minimal ustar/pax/GNU reader. shortcut: checksums are not verified, sparse files unsupported. */
-export function readTar(tar: Buffer): TarEntry[] {
-  const out: TarEntry[] = [];
-  let longName: string | undefined;
-  for (let o = 0; o + 512 <= tar.length;) {
-    const h = tar.subarray(o, o + 512);
-    if (h.every((b) => b === 0)) break;
-    const cstr = (a: number, b: number) => { const s = h.subarray(a, b); const z = s.indexOf(0); return s.subarray(0, z < 0 ? s.length : z).toString('utf8'); };
-    const size = parseInt(cstr(124, 136).trim() || '0', 8);
-    if (!Number.isFinite(size) || size < 0) fail(400, 'corrupt archive');
-    const type = String.fromCharCode(h[156] || 48);
-    const data = tar.subarray(o + 512, o + 512 + size);
-    o += 512 + Math.ceil(size / 512) * 512;
-    if (type === 'x') { for (const m of data.toString('utf8').matchAll(/\d+ path=([^\n]*)\n/g)) longName = m[1]; continue; }
-    if (type === 'L') { longName = data.toString('utf8').replace(/\0.*$/s, ''); continue; }
-    if (type === 'g') continue;
-    const prefix = cstr(345, 500);
-    out.push({ path: longName ?? (prefix ? prefix + '/' : '') + cstr(0, 100), type, data });
-    longName = undefined;
-  }
-  return out;
-}
-
 const GH_HOSTS = new Set(['github.com', 'codeload.github.com']);
 async function ghFetch(url: string, hops = 0): Promise<Response> {
   const u = new URL(url);
   if (u.protocol !== 'https:' || !GH_HOSTS.has(u.hostname)) fail(400, 'only https://github.com is supported');
+  await assertPublicHost(url).catch(() => fail(400, 'that address is not allowed'));
   const res = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(LIMITS.timeoutMs), headers: { 'user-agent': 'hefyn-hub' } }).catch((e) => fail(502, `GitHub is unreachable (${(e as Error).message})`));
   if (res.status >= 300 && res.status < 400) {
     const loc = res.headers.get('location');
@@ -233,7 +224,7 @@ async function ghFetch(url: string, hops = 0): Promise<Response> {
   return res;
 }
 
-interface Target { owner: string; repo: string; ref: string; path: string }
+interface Target { owner: string; repo: string; ref: string; path: string; gl?: GitlabTarget }
 export function parseGithubUrl(raw: string, refOverride?: string): Target {
   let u: URL;
   try { u = new URL(raw); } catch { return fail(400, 'invalid URL'); }
@@ -250,7 +241,7 @@ export function parseGithubUrl(raw: string, refOverride?: string): Target {
 }
 
 async function fetchRepo(t: Target): Promise<TarEntry[]> {
-  const res = await ghFetch(`https://codeload.github.com/${t.owner}/${t.repo}/tar.gz/${t.ref}`);
+  const res = t.gl ? await gitlabArchive(t.gl, t.ref) : await ghFetch(`https://codeload.github.com/${t.owner}/${t.repo}/tar.gz/${t.ref}`);
   const chunks: Buffer[] = [];
   let n = 0;
   for await (const c of res.body as unknown as AsyncIterable<Uint8Array>) {
@@ -261,7 +252,15 @@ async function fetchRepo(t: Target): Promise<TarEntry[]> {
   let tar: Buffer;
   try { tar = gunzipSync(Buffer.concat(chunks), { maxOutputLength: LIMITS.unpacked }); } catch { return fail(400, 'archive is corrupt or larger than 100 MB'); }
   // GitHub wraps everything in one <repo>-<sha>/ directory.
-  return readTar(tar).map((e) => ({ ...e, path: e.path.replace(/^[^/]*\//, '') })).filter((e) => e.path && !e.path.startsWith('.git/') && !e.path.includes('node_modules/'));
+  let entries: TarEntry[];
+  try { entries = readTar(tar); } catch { return fail(400, 'corrupt archive'); }
+  return entries.map((e) => ({ ...e, path: e.path.replace(/^[^/]*\//, '') })).filter((e) => e.path && !e.path.startsWith('.git/') && !e.path.includes('node_modules/'));
+}
+
+/** A GitHub or GitLab repo URL as tar entries (its single top folder already removed) and the subfolder the URL points at. Assistant bundles import through this. */
+export async function fetchTree(url: string): Promise<{ entries: TarEntry[]; path: string }> {
+  const t = /^https:\/\/github\.com(\/|$)/i.test(url) ? parseGithubUrl(url) : parseGitlabUrl(url);
+  return { entries: await fetchRepo(t), path: t.path };
 }
 
 /** Text files under `prefix`, with the import limits applied. Symlinks and hardlinks reject the import; binaries are skipped. */
@@ -290,7 +289,7 @@ export function selectFiles(entries: TarEntry[], prefix: string): Files {
 interface Imported { draft: Draft; source: Source }
 
 export async function fetchDrafts(url: string, refOverride?: string): Promise<Imported[]> {
-  const t = parseGithubUrl(url, refOverride);
+  const t = /^https:\/\/github\.com(\/|$)/i.test(url) ? parseGithubUrl(url, refOverride) : parseGitlabUrl(url, refOverride);
   const entries = await fetchRepo(t);
   const pre = t.path ? t.path + '/' : '';
   const mkt = entries.find((e) => e.path === pre + '.claude-plugin/marketplace.json');
@@ -363,6 +362,7 @@ const filesOf = (id: string): Files => Object.fromEntries((db.prepare('SELECT pa
 const hashOf = (d: Draft) => createHash('sha256').update(JSON.stringify([Object.entries(d.files).sort(([a], [b]) => (a < b ? -1 : 1)), d.manifest.items, d.manifest.ignored, d.manifest.needsRunner])).digest('hex');
 
 function tx<T>(f: () => T): T {
+  if (db.isTransaction) return f(); // joins the caller's transaction (module install)
   db.exec('BEGIN');
   try { const r = f(); db.exec('COMMIT'); return r; } catch (e) { db.exec('ROLLBACK'); throw e; }
 }
@@ -397,6 +397,7 @@ interface View { r: Row; live: boolean; status: Row['status']; version: string; 
 /** Owner and reviewers see live content; everybody else sees the approved snapshot of team packages only. */
 function view(r: Row | undefined, me: Viewer): View | undefined {
   if (!r) return;
+  if (r.kind === 'assistant' && r.owner_id !== me.id && !has(me, 'hub.approve')) return; // a shared Assistant is for its owner and the reviewers; the team gets the copy, not the package
   const snap = r.approved_json ? (JSON.parse(r.approved_json) as Snapshot) : undefined;
   if (r.owner_id === me.id || (r.visibility === 'team' && has(me, 'hub.approve'))) return { r, live: true, status: r.status, version: r.version, hash: r.hash, manifest: JSON.parse(r.manifest_json), snap };
   if (r.visibility === 'team' && snap) return { r, live: false, status: 'approved', version: snap.version, hash: snap.hash, manifest: snap.manifest, snap };
@@ -408,18 +409,19 @@ const publicManifest = (m: Manifest) => {
   return {
     // single-item packages expose their editable fields at top level (HUB-API v1.1); bundles list their contents
     ...(one && skills[0] ? { instructions: skills[0].instructions } : {}),
-    ...(one && agents[0] ? { instructions: agents[0].instructions, ...(agents[0].model ? { model: agents[0].model } : {}), skills: agents[0].skills } : {}),
     ...(one && mcp[0] ? { url: mcp[0].url, transport: mcp[0].transport, auth: mcp[0].auth, ...(mcp[0].storage ? { storage: true } : {}) } : {}),
     skills: skills.map((s) => ({ name: s.name, description: s.description, files: Object.keys(s.files) })),
-    agents: agents.map((a) => ({ name: a.name, description: a.description, model: a.model, skills: a.skills })),
+    agents: agents.map((a) => ({ name: a.name, description: a.description, model: a.model, thinking: a.thinking, skills: a.skills })),
     mcp, ignored: m.ignored, needsRunner: m.needsRunner, plugin: m.plugin,
+    // after the lists: an agent's top-level `skills` is its skill names (editable), not the bundle listing
+    ...(one && agents[0] ? { instructions: agents[0].instructions, ...(agents[0].model ? { model: agents[0].model } : {}), ...(agents[0].thinking ? { thinking: agents[0].thinking } : {}), skills: agents[0].skills } : {}),
   };
 };
 const ownerName = (id: string) => { try { return (db.prepare('SELECT name FROM user WHERE id = ?').get(id) as any)?.name ?? id; } catch { return id; } };
 
 function pkg(v: View, me: Viewer) {
   const { r } = v;
-  const inst = (t: string) => !!db.prepare("SELECT 1 FROM installs WHERE package_id = ? AND target = ? AND COALESCE(user_id, '') = ?").get(r.id, t, t === 'me' ? me.id : '');
+  const inst = (t: string) => r.kind === 'module' ? t === 'team' && !!db.prepare('SELECT 1 FROM modules WHERE hub_package = ?').get(r.id) : !!db.prepare("SELECT 1 FROM installs WHERE package_id = ? AND target = ? AND COALESCE(user_id, '') = ?").get(r.id, t, t === 'me' ? me.id : '');
   const g: Guarded = JSON.parse(r.guard_json);
   return {
     id: r.id, kind: r.kind, name: r.name, description: r.description, version: v.version, hash: v.hash, source: JSON.parse(r.source_json) as Source,
@@ -482,7 +484,7 @@ export function deletePackage(me: Viewer, id: string) {
 
 export async function importFromUrl(me: Viewer, url: string, ref?: string) {
   need(me, 'hub.install');
-  const found = await fetchDrafts(str(url, 'url', 500), ref);
+  const found = await fetchDrafts(await resolveSource(str(url, 'url', 500)), ref);
   const guarded: Guarded[] = [];
   for (const i of found) guarded.push(await screen(i.draft)); // all screened before anything is written
   return found.map((i, n) => pkg(view(save(me.id, i.draft, i.source, guarded[n]!), me)!, me));
@@ -495,7 +497,7 @@ export async function registryImport(me: Viewer, name: string) {
   return pkg(view(save(me.id, d, { type: 'mcp-registry', url: hit.repository }, await screen(d)), me)!, me);
 }
 
-// ---------- review workflow ----------
+// ---------- review process ----------
 
 export async function publish(me: Viewer, id: string) {
   need(me, 'hub.publish');
@@ -518,6 +520,7 @@ export function approve(me: Viewer, id: string) {
   const r = seen(id, me).r;
   if (r.visibility !== 'team' || r.status !== 'pending') fail(409, 'only pending packages can be approved');
   approveRow(id);
+  if (r.kind === 'assistant') reviewHooks.assistant?.(id, 'approved');
   return pkg(view(row(id), me)!, me);
 }
 
@@ -526,6 +529,7 @@ export function reject(me: Viewer, id: string, reason: unknown) {
   const r = seen(id, me).r;
   if (r.visibility !== 'team' || r.status !== 'pending') fail(409, 'only pending packages can be rejected');
   db.prepare("UPDATE packages SET status = 'rejected', reject_reason = ?, updated_at = ? WHERE id = ?").run(str(reason, 'reason', 2000), now(), id);
+  if (r.kind === 'assistant') reviewHooks.assistant?.(id, 'rejected', typeof reason === 'string' ? reason : undefined);
   return pkg(view(row(id), me)!, me);
 }
 
@@ -544,18 +548,31 @@ const targetOf = (me: Viewer, t: unknown) => {
 };
 const count = (m: Manifest) => m.items.skills.length + m.items.agents.length + m.items.mcp.length;
 
+// A module package is installed for the whole instance by `modules.manage`; the caller then runs the module installer (no installs row).
+const isModule = (id: string) => row(id)?.kind === 'module';
+const moduleTarget = (me: Viewer) => { need(me, 'modules.manage'); return 'team' as const; };
+
+/** The manifest a module package carries: approved snapshot first. */
+export function moduleSource(id: string): unknown {
+  const r = row(id);
+  const files = r?.approved_json ? (JSON.parse(r.approved_json) as Snapshot).files : r ? filesOf(id) : {};
+  return json(files[MODULE_FILE]);
+}
+
 export function install(me: Viewer, id: string, target: unknown) {
-  const t = targetOf(me, target);
+  const mod = isModule(id);
+  const t = mod ? moduleTarget(me) : targetOf(me, target);
   const v = seen(id, me);
   const approved = v.r.visibility === 'team' && !!v.snap;
   if (!approved && !(t === 'me' && v.r.owner_id === me.id)) fail(409, 'only approved packages can be installed (your own private packages: for yourself only)');
+  if (mod) return pkg(v, me);
   if (!count(v.snap?.manifest ?? v.manifest)) fail(409, `nothing installable in this package${v.manifest.needsRunner.length ? ' (' + v.manifest.needsRunner.join('; ') + ')' : ''}`);
   db.prepare('INSERT OR IGNORE INTO installs (package_id, target, user_id, created_at) VALUES (?,?,?,?)').run(id, t, t === 'me' ? me.id : null, now());
   return pkg(v, me);
 }
 
 export function uninstall(me: Viewer, id: string, target: unknown) {
-  const t = targetOf(me, target);
+  const t = isModule(id) ? moduleTarget(me) : targetOf(me, target);
   const v = seen(id, me);
   db.prepare("DELETE FROM installs WHERE package_id = ? AND target = ? AND COALESCE(user_id, '') = ?").run(id, t, t === 'me' ? me.id : '');
   return pkg(v, me);
@@ -612,3 +629,58 @@ export function onMcpInstall(_userId: string, id: string): ConnectorData[] {
   const m: Manifest = r.approved_json ? (JSON.parse(r.approved_json) as Snapshot).manifest : JSON.parse(r.manifest_json);
   return m.items.mcp.map((s) => ({ ...s, source: `hub:${id}` }));
 }
+
+// ---------- module items ----------
+
+/**
+ * A module's skills and agents become approved team packages owned by the installer and installed for the team; `source.url` =
+ * `module:<id>` finds them again. Nothing is screened here: the Admin installing a module vouches for it (the Hub path screens it).
+ * Runs inside the caller's transaction. A name the installer already uses is a 409, never an overwrite.
+ */
+export function installModuleItems(ownerId: string, moduleId: string, items: { skills?: { name: string; description: string; instructions: string }[]; agents?: { name: string; description: string; instructions: string; model?: string; skills?: string[] }[] }) {
+  const all = [...(items.skills ?? []).map((s) => ({ ...s, kind: 'skill' })), ...(items.agents ?? []).map((a) => ({ ...a, kind: 'agent' }))];
+  for (const it of all) {
+    const d = draftFromBody(it);
+    if (db.prepare('SELECT 1 FROM packages WHERE owner_id = ? AND kind = ? AND name = ?').get(ownerId, d.kind, d.name)) fail(409, `you already have a ${d.kind} named ${d.name}`);
+    const r = save(ownerId, d, { type: 'ui', url: `module:${moduleId}` }, { flagged: false, reasons: [] });
+    db.prepare("UPDATE packages SET visibility = 'team', status = 'pending' WHERE id = ?").run(r.id);
+    approveRow(r.id);
+    db.prepare("INSERT INTO installs (package_id, target, user_id, created_at) VALUES (?, 'team', NULL, ?)").run(r.id, now());
+  }
+}
+
+export function removeModuleItems(moduleId: string) {
+  for (const p of db.prepare("SELECT id FROM packages WHERE json_extract(source_json, '$.url') = ?").all(`module:${moduleId}`) as { id: string }[]) {
+    for (const t of ['package_files', 'installs']) db.prepare(`DELETE FROM ${t} WHERE package_id = ?`).run(p.id);
+    db.prepare('DELETE FROM packages WHERE id = ?').run(p.id);
+  }
+}
+
+// ---------- skills page (Skills in the console): own skills, and the team's ----------
+
+/** Share a skill with the team: whoever holds `skills.share` makes it team-visible at once. Only content the screening flagged waits for a reviewer (`hub.approve`). */
+export function shareSkill(me: Viewer, id: string) {
+  need(me, 'skills.share');
+  const r = owned(me, id);
+  if (r.kind !== 'skill') fail(400, 'only a skill can be shared this way');
+  db.prepare("UPDATE packages SET visibility = 'team', status = 'pending', reject_reason = NULL, updated_at = ? WHERE id = ?").run(now(), id);
+  if (!(JSON.parse(r.guard_json) as Guarded).flagged) approveRow(id);
+  return pkg(view(row(id), me)!, me);
+}
+/** Back to private: the team no longer gets it (what the team installed of it goes too). */
+export function unshareSkill(me: Viewer, id: string) {
+  const r = owned(me, id);
+  if (r.kind !== 'skill') fail(400, 'only a skill can be shared this way');
+  db.prepare("UPDATE packages SET visibility = 'private', status = 'draft', approved_json = NULL, updated_at = ? WHERE id = ?").run(now(), id);
+  db.prepare("DELETE FROM installs WHERE package_id = ? AND target = 'team'").run(id);
+  return pkg(view(row(id), me)!, me);
+}
+/** A skill as an agent gets it: the user's own (what they wrote now), or a team skill's approved snapshot. undefined: not a skill, or not theirs to use. */
+export function skillContent(userId: string, id: string): { name: string; description: string; files: Files } | undefined {
+  const r = row(id);
+  if (r?.kind !== 'skill') return;
+  if (r.owner_id === userId) return { name: r.name, description: r.description, files: filesOf(id) };
+  if (r.visibility === 'team' && r.approved_json) return { name: r.name, description: r.description, files: (JSON.parse(r.approved_json) as Snapshot).files };
+}
+/** Ids of the skills a user has: their own, then the team's approved ones. */
+export const skillIdsOf = (userId: string): string[] => (db.prepare("SELECT id FROM packages WHERE kind = 'skill' AND (owner_id = ? OR (visibility = 'team' AND approved_json IS NOT NULL)) ORDER BY (owner_id = ?) DESC, name").all(userId, userId) as { id: string }[]).map((r) => r.id);

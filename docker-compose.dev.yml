@@ -1,24 +1,23 @@
 # Dev stack with hot reload: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --watch
-# Open http://localhost:4321. Only Astro is published; web (API) and agent stay internal.
+# Open http://localhost:4321. Only the console dev server (Bun, HMR) is published; web (API) and agent stay internal.
 x-dev: &dev
   build: !override { context: ., dockerfile: Dockerfile.dev }
   image: hefyn-dev
-  tty: true # Astro detaches into the background without a TTY
+  tty: true # keeps concurrently's output line-buffered and coloured
   volumes: !override [dev-data:/data]
   environment: &devenv
     HEFYN_SECRET: ${HEFYN_SECRET:-dev-only-secret-do-not-use-in-production}
     HEFYN_INTERNAL_TOKEN: ${HEFYN_INTERNAL_TOKEN:-dev-only-internal-token}
     HEFYN_URL: http://localhost:4321
+    HEFYN_KEY_MODE: server # the dev server restarts on every change: keys must survive it
     HEFYN_AGENT_URL: http://agent:5174
-    HEFYN_REDACT_URL: http://redact:8787
-    HEFYN_REDACT_GLINER: ${HEFYN_REDACT_GLINER:-off} # regex + entropy only by default; on = web downloads the model into dev-data
     HEFYN_DRAIN_TIMEOUT_MS: ${HEFYN_DRAIN_TIMEOUT_MS:-60000}
     NODE_ENV: development
 services:
   web:
     <<: *dev
     command: ["bun", "run", "dev:web:docker"]
-    ports: !override ["4321:4321"]
+    ports: !override ["4321:4321", "127.0.0.1:1455:1455"]
     restart: "no"
     depends_on: !override [agent]
     develop:
@@ -27,47 +26,36 @@ services:
         - { action: sync, path: ./profiles, target: /app/profiles }
         - { action: rebuild, path: ./package.json }
         - { action: rebuild, path: ./bun.lock }
-        - { action: rebuild, path: ./vite.config.ts }
-        - { action: rebuild, path: ./flue.config.ts }
         - { action: sync, path: ./web/src, target: /app/web/src }
         - { action: sync, path: ./assets, target: /app/assets }
-        - { action: rebuild, path: ./web/astro.config.mjs }
+        - { action: rebuild, path: ./bunfig.toml }
+        - { action: sync+restart, path: ./web/serve.ts, target: /app/web/serve.ts }
+        - { action: sync+restart, path: ./web/shell.ts, target: /app/web/shell.ts }
   agent:
     <<: *dev
     command: ["bun", "run", "dev:agent"]
-    depends_on: !override [redact]
+    depends_on: !override []
+    healthcheck: # dev listens on 5174 (bun --watch restarts it on every synced change; the restart coordinator's exit is handled by the restart policy)
+      test: !override ["CMD", "bun", "-e", "fetch('http://localhost:5174/',{headers:{'x-hefyn-internal':process.env.HEFYN_INTERNAL_TOKEN}}).then(r=>process.exit(r.status<500?0:1),()=>process.exit(1))"]
+      interval: 10s
+      timeout: 4s
+      retries: 12
+      start_period: 40s
     develop:
       watch:
         - { action: sync, path: ./src, target: /app/src }
         - { action: sync, path: ./profiles, target: /app/profiles }
         - { action: rebuild, path: ./package.json }
         - { action: rebuild, path: ./bun.lock }
-        - { action: rebuild, path: ./vite.config.ts }
-        - { action: rebuild, path: ./flue.config.ts }
-  redact:
-    <<: *dev
-    command: ["node", "src/redact-server.ts"]
-    environment:
-      <<: *devenv
-      PORT: "8787"
-    restart: unless-stopped
-    networks: [core]
-    cpus: ${HEFYN_REDACT_CPUS:-2}
-    mem_limit: ${HEFYN_REDACT_MEMORY:-1536m}
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:8787/live',{headers:{'x-hefyn-internal':process.env.HEFYN_INTERNAL_TOKEN}}).then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
-      interval: 10s
-    develop:
-      watch:
-        - { action: sync+restart, path: ./src/server/redact, target: /app/src/server/redact }
-        - { action: sync+restart, path: ./src/redact-server.ts, target: /app/src/redact-server.ts }
   runner:
-    volumes: !override [dev-data:/data, /var/run/docker.sock:/var/run/docker.sock] # the dev stack has its own data volume
+    volumes: !override [dev-data:/data, hefyn-agents:/agents:ro, /var/run/docker.sock:/var/run/docker.sock] # the dev stack has its own data volume (and, being project-scoped, its own agents volume)
     develop:
       watch:
-        - { action: sync+restart, path: ./services/runner/src, target: /app/src } # plain TS run by node: no image rebuild
+        - { action: sync+restart, path: ./services/runner/src, target: /app/src } # plain TS run by bun: no image rebuild
         - { action: rebuild, path: ./services/runner/package.json }
   egress:
+    environment:
+      HEFYN_EGRESS_ALLOWLIST_URL: http://web:5173/internal/egress-allowlist # dev web serves its API on 5173, not 3000
     develop:
       watch:
         - { action: sync+restart, path: ./services/egress/src, target: /app/src }

@@ -1,0 +1,1873 @@
+{
+  "claude-acp": {
+    "name": "Claude Code",
+    "description": "Anthropic's coding agent.",
+    "api": "anthropic",
+    "actsWithoutAsking": false,
+    "npm": {
+      "package": "@anthropic-ai/claude-code",
+      "bin": "claude",
+      "check": [
+        "node_modules/@anthropic-ai/claude-code/package.json"
+      ]
+    },
+    "configDir": "/tmp/.claude",
+    "instructionsFile": "CLAUDE.md",
+    "skillsDir": "/tmp/.claude/skills",
+    "mcpConfig": "/tmp/.claude/.claude.json (mcpServers; or `claude mcp add`)",
+    "wrap|undefined|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "bin=$(ls /opt/agents/claude-acp/9.9.9/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1); if ls \"$CLAUDE_CONFIG_DIR\"/projects/*/11111111-2222-3333-4444-555555555555.jsonl >/dev/null 2>&1; then exec \"$bin\" --resume 11111111-2222-3333-4444-555555555555; else exec \"$bin\" --session-id 11111111-2222-3333-4444-555555555555; fi"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:4711",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "CLAUDE_CONFIG_DIR": "/tmp/.claude",
+        "DISABLE_AUTOUPDATER": "1",
+        "DISABLE_INSTALLATION_CHECKS": "1",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "DISABLE_TELEMETRY": "1",
+        "DISABLE_ERROR_REPORTING": "1",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"hasCompletedOnboarding\":true,\"hasSeenAutoDefaultNudge\":true,\"customApiKeyResponses\":{\"approved\":[\"hefyn-gateway\"]},\"projects\":{\"/files\":{\"hasTrustDialogAccepted\":true}}},\"force\":true},{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"theme\":\"dark\"},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"permissions\":{\"defaultMode\":\"default\"}},\"force\":false}]"
+      }
+    },
+    "wrap|undefined|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "bin=$(ls /opt/agents/claude-acp/9.9.9/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1); if ls \"$CLAUDE_CONFIG_DIR\"/projects/*/11111111-2222-3333-4444-555555555555.jsonl >/dev/null 2>&1; then exec \"$bin\" --resume 11111111-2222-3333-4444-555555555555; else exec \"$bin\" --session-id 11111111-2222-3333-4444-555555555555; fi"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:4711",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "CLAUDE_CONFIG_DIR": "/tmp/.claude",
+        "DISABLE_AUTOUPDATER": "1",
+        "DISABLE_INSTALLATION_CHECKS": "1",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "DISABLE_TELEMETRY": "1",
+        "DISABLE_ERROR_REPORTING": "1",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"hasCompletedOnboarding\":true,\"hasSeenAutoDefaultNudge\":true,\"customApiKeyResponses\":{\"approved\":[\"hefyn-gateway\"]},\"projects\":{\"/files\":{\"hasTrustDialogAccepted\":true}},\"theme\":\"light\"},\"force\":true},{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"theme\":\"dark\"},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"permissions\":{\"defaultMode\":\"default\"}},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"theme\":\"light\"},\"force\":true}]"
+      }
+    },
+    "wrap|undefined|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "bin=$(ls /opt/agents/claude-acp/9.9.9/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1); if ls \"$CLAUDE_CONFIG_DIR\"/projects/*/11111111-2222-3333-4444-555555555555.jsonl >/dev/null 2>&1; then exec \"$bin\" --resume 11111111-2222-3333-4444-555555555555; else exec \"$bin\" --session-id 11111111-2222-3333-4444-555555555555; fi"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:4711",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "CLAUDE_CONFIG_DIR": "/tmp/.claude",
+        "DISABLE_AUTOUPDATER": "1",
+        "DISABLE_INSTALLATION_CHECKS": "1",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "DISABLE_TELEMETRY": "1",
+        "DISABLE_ERROR_REPORTING": "1",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"hasCompletedOnboarding\":true,\"hasSeenAutoDefaultNudge\":true,\"customApiKeyResponses\":{\"approved\":[\"hefyn-gateway\"]},\"projects\":{\"/files\":{\"hasTrustDialogAccepted\":true}},\"theme\":\"dark\"},\"force\":true},{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"theme\":\"dark\"},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"permissions\":{\"defaultMode\":\"default\"}},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"theme\":\"dark\"},\"force\":true}]"
+      }
+    },
+    "wrap|{\"model\":null}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "bin=$(ls /opt/agents/claude-acp/9.9.9/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1); if ls \"$CLAUDE_CONFIG_DIR\"/projects/*/11111111-2222-3333-4444-555555555555.jsonl >/dev/null 2>&1; then exec \"$bin\" --resume 11111111-2222-3333-4444-555555555555; else exec \"$bin\" --session-id 11111111-2222-3333-4444-555555555555; fi"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:4711",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "CLAUDE_CONFIG_DIR": "/tmp/.claude",
+        "DISABLE_AUTOUPDATER": "1",
+        "DISABLE_INSTALLATION_CHECKS": "1",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "DISABLE_TELEMETRY": "1",
+        "DISABLE_ERROR_REPORTING": "1",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"hasCompletedOnboarding\":true,\"hasSeenAutoDefaultNudge\":true,\"customApiKeyResponses\":{\"approved\":[\"hefyn-gateway\"]},\"projects\":{\"/files\":{\"hasTrustDialogAccepted\":true}}},\"force\":true},{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"theme\":\"dark\"},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"permissions\":{\"defaultMode\":\"default\"}},\"force\":false}]"
+      }
+    },
+    "wrap|{\"model\":null}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "bin=$(ls /opt/agents/claude-acp/9.9.9/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1); if ls \"$CLAUDE_CONFIG_DIR\"/projects/*/11111111-2222-3333-4444-555555555555.jsonl >/dev/null 2>&1; then exec \"$bin\" --resume 11111111-2222-3333-4444-555555555555; else exec \"$bin\" --session-id 11111111-2222-3333-4444-555555555555; fi"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:4711",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "CLAUDE_CONFIG_DIR": "/tmp/.claude",
+        "DISABLE_AUTOUPDATER": "1",
+        "DISABLE_INSTALLATION_CHECKS": "1",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "DISABLE_TELEMETRY": "1",
+        "DISABLE_ERROR_REPORTING": "1",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"hasCompletedOnboarding\":true,\"hasSeenAutoDefaultNudge\":true,\"customApiKeyResponses\":{\"approved\":[\"hefyn-gateway\"]},\"projects\":{\"/files\":{\"hasTrustDialogAccepted\":true}},\"theme\":\"light\"},\"force\":true},{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"theme\":\"dark\"},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"permissions\":{\"defaultMode\":\"default\"}},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"theme\":\"light\"},\"force\":true}]"
+      }
+    },
+    "wrap|{\"model\":null}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "bin=$(ls /opt/agents/claude-acp/9.9.9/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1); if ls \"$CLAUDE_CONFIG_DIR\"/projects/*/11111111-2222-3333-4444-555555555555.jsonl >/dev/null 2>&1; then exec \"$bin\" --resume 11111111-2222-3333-4444-555555555555; else exec \"$bin\" --session-id 11111111-2222-3333-4444-555555555555; fi"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:4711",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "CLAUDE_CONFIG_DIR": "/tmp/.claude",
+        "DISABLE_AUTOUPDATER": "1",
+        "DISABLE_INSTALLATION_CHECKS": "1",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "DISABLE_TELEMETRY": "1",
+        "DISABLE_ERROR_REPORTING": "1",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"hasCompletedOnboarding\":true,\"hasSeenAutoDefaultNudge\":true,\"customApiKeyResponses\":{\"approved\":[\"hefyn-gateway\"]},\"projects\":{\"/files\":{\"hasTrustDialogAccepted\":true}},\"theme\":\"dark\"},\"force\":true},{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"theme\":\"dark\"},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"permissions\":{\"defaultMode\":\"default\"}},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"theme\":\"dark\"},\"force\":true}]"
+      }
+    },
+    "wrap|{\"model\":\"m-1\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "bin=$(ls /opt/agents/claude-acp/9.9.9/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1); if ls \"$CLAUDE_CONFIG_DIR\"/projects/*/11111111-2222-3333-4444-555555555555.jsonl >/dev/null 2>&1; then exec \"$bin\" --resume 11111111-2222-3333-4444-555555555555; else exec \"$bin\" --session-id 11111111-2222-3333-4444-555555555555; fi"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:4711",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "CLAUDE_CONFIG_DIR": "/tmp/.claude",
+        "DISABLE_AUTOUPDATER": "1",
+        "DISABLE_INSTALLATION_CHECKS": "1",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "DISABLE_TELEMETRY": "1",
+        "DISABLE_ERROR_REPORTING": "1",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"hasCompletedOnboarding\":true,\"hasSeenAutoDefaultNudge\":true,\"customApiKeyResponses\":{\"approved\":[\"hefyn-gateway\"]},\"projects\":{\"/files\":{\"hasTrustDialogAccepted\":true}}},\"force\":true},{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"theme\":\"dark\"},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"permissions\":{\"defaultMode\":\"default\"}},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"model\":\"m-1\"},\"force\":true}]"
+      }
+    },
+    "wrap|{\"model\":\"m-1\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "bin=$(ls /opt/agents/claude-acp/9.9.9/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1); if ls \"$CLAUDE_CONFIG_DIR\"/projects/*/11111111-2222-3333-4444-555555555555.jsonl >/dev/null 2>&1; then exec \"$bin\" --resume 11111111-2222-3333-4444-555555555555; else exec \"$bin\" --session-id 11111111-2222-3333-4444-555555555555; fi"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:4711",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "CLAUDE_CONFIG_DIR": "/tmp/.claude",
+        "DISABLE_AUTOUPDATER": "1",
+        "DISABLE_INSTALLATION_CHECKS": "1",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "DISABLE_TELEMETRY": "1",
+        "DISABLE_ERROR_REPORTING": "1",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"hasCompletedOnboarding\":true,\"hasSeenAutoDefaultNudge\":true,\"customApiKeyResponses\":{\"approved\":[\"hefyn-gateway\"]},\"projects\":{\"/files\":{\"hasTrustDialogAccepted\":true}},\"theme\":\"light\"},\"force\":true},{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"theme\":\"dark\"},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"permissions\":{\"defaultMode\":\"default\"}},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"model\":\"m-1\"},\"force\":true},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"theme\":\"light\"},\"force\":true}]"
+      }
+    },
+    "wrap|{\"model\":\"m-1\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "bin=$(ls /opt/agents/claude-acp/9.9.9/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1); if ls \"$CLAUDE_CONFIG_DIR\"/projects/*/11111111-2222-3333-4444-555555555555.jsonl >/dev/null 2>&1; then exec \"$bin\" --resume 11111111-2222-3333-4444-555555555555; else exec \"$bin\" --session-id 11111111-2222-3333-4444-555555555555; fi"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:4711",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "CLAUDE_CONFIG_DIR": "/tmp/.claude",
+        "DISABLE_AUTOUPDATER": "1",
+        "DISABLE_INSTALLATION_CHECKS": "1",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "DISABLE_TELEMETRY": "1",
+        "DISABLE_ERROR_REPORTING": "1",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"hasCompletedOnboarding\":true,\"hasSeenAutoDefaultNudge\":true,\"customApiKeyResponses\":{\"approved\":[\"hefyn-gateway\"]},\"projects\":{\"/files\":{\"hasTrustDialogAccepted\":true}},\"theme\":\"dark\"},\"force\":true},{\"path\":\"/tmp/.claude/.claude.json\",\"json\":{\"theme\":\"dark\"},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"permissions\":{\"defaultMode\":\"default\"}},\"force\":false},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"model\":\"m-1\"},\"force\":true},{\"path\":\"/tmp/.claude/settings.json\",\"json\":{\"theme\":\"dark\"},\"force\":true}]"
+      }
+    },
+    "assistantSeeds": [
+      {
+        "path": "/tmp/.claude/CLAUDE.md",
+        "text": "Be kind."
+      },
+      {
+        "path": "/tmp/.claude/skills",
+        "sweep": true
+      },
+      {
+        "path": "/tmp/.claude/skills/a-skill/.hefyn-managed",
+        "text": ""
+      },
+      {
+        "path": "/tmp/.claude/skills/a-skill/SKILL.md",
+        "text": "x"
+      },
+      {
+        "path": "/tmp/.claude/skills/a-skill/sub/f.txt",
+        "text": "y"
+      }
+    ]
+  },
+  "codex-acp": {
+    "name": "Codex",
+    "description": "OpenAI's coding agent.",
+    "api": "openai-responses",
+    "actsWithoutAsking": false,
+    "npm": {
+      "package": "@agentclientprotocol/codex-acp",
+      "bin": "codex-acp",
+      "check": [
+        "node_modules/.bin/codex"
+      ]
+    },
+    "configDir": "/tmp/.codex",
+    "instructionsFile": "AGENTS.md",
+    "skillsDir": "/tmp/.codex/skills",
+    "mcpConfig": "/tmp/.codex/config.toml ([mcp_servers.<name>])",
+    "acp|undefined|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex-acp"
+      ],
+      "env": {
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "term|undefined|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/codex-acp/9.9.9/node_modules/.bin/codex --no-daemon"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "acp|undefined|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex-acp"
+      ],
+      "env": {
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "term|undefined|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/codex-acp/9.9.9/node_modules/.bin/codex --no-daemon"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "acp|undefined|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex-acp"
+      ],
+      "env": {
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "term|undefined|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/codex-acp/9.9.9/node_modules/.bin/codex --no-daemon"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "acp|{\"model\":null}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex-acp"
+      ],
+      "env": {
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "term|{\"model\":null}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/codex-acp/9.9.9/node_modules/.bin/codex --no-daemon"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "acp|{\"model\":null}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex-acp"
+      ],
+      "env": {
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "term|{\"model\":null}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/codex-acp/9.9.9/node_modules/.bin/codex --no-daemon"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "acp|{\"model\":null}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex-acp"
+      ],
+      "env": {
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "term|{\"model\":null}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/codex-acp/9.9.9/node_modules/.bin/codex --no-daemon"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "acp|{\"model\":\"m-1\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex-acp"
+      ],
+      "env": {
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model = \\\"m-1\\\"\\nmodel_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "term|{\"model\":\"m-1\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/codex-acp/9.9.9/node_modules/.bin/codex --no-daemon"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model = \\\"m-1\\\"\\nmodel_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "acp|{\"model\":\"m-1\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex-acp"
+      ],
+      "env": {
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model = \\\"m-1\\\"\\nmodel_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "term|{\"model\":\"m-1\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/codex-acp/9.9.9/node_modules/.bin/codex --no-daemon"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model = \\\"m-1\\\"\\nmodel_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "acp|{\"model\":\"m-1\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex-acp"
+      ],
+      "env": {
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model = \\\"m-1\\\"\\nmodel_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "term|{\"model\":\"m-1\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/codex-acp/9.9.9/node_modules/.bin/codex --no-daemon"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model = \\\"m-1\\\"\\nmodel_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "term|sid|11111111-2222-3333-4444-555555555555": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "if ls /tmp/.codex/sessions/*/*/*/rollout-*11111111-2222-3333-4444-555555555555.jsonl >/dev/null 2>&1; then exec /opt/agents/codex-acp/9.9.9/node_modules/.bin/codex --no-daemon resume 11111111-2222-3333-4444-555555555555; else exec /opt/agents/codex-acp/9.9.9/node_modules/.bin/codex --no-daemon; fi"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "term|sid|ses_abc123": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/codex-acp/9.9.9/node_modules/.bin/codex --no-daemon"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "term|sid|bad; rm -rf /": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/codex-acp/9.9.9/node_modules/.bin/codex --no-daemon"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "CODEX_HOME": "/tmp/.codex",
+        "HEFYN_GATEWAY_KEY": "hefyn-gateway",
+        "OPENAI_API_KEY": "hefyn-gateway",
+        "CODEX_PATH": "/opt/hefyn/codex-shim.mjs",
+        "CODEX_REAL": "/opt/agents/codex-acp/9.9.9/node_modules/.bin/codex",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.codex/config.toml\",\"text\":\"model_provider = \\\"hefyn\\\"\\ncheck_for_update_on_startup = false\\nweb_search = \\\"disabled\\\"\\napproval_policy = { granular = { sandbox_approval = true, rules = true, mcp_elicitations = true } }\\nsandbox_mode = \\\"danger-full-access\\\"\\n[projects.\\\"/files\\\"]\\ntrust_level = \\\"trusted\\\"\\n[analytics]\\nenabled = false\\n[feedback]\\nenabled = false\\n[model_providers.hefyn]\\nname = \\\"hefyn\\\"\\nbase_url = \\\"http://127.0.0.1:4711/v1\\\"\\nwire_api = \\\"responses\\\"\\nenv_key = \\\"HEFYN_GATEWAY_KEY\\\"\\nrequires_openai_auth = false\\n\"},{\"path\":\"/tmp/.codex/rules/default.rules\",\"text\":\"prefix_rule(pattern=[[\\\"ls\\\",\\\"cat\\\",\\\"head\\\",\\\"tail\\\",\\\"pwd\\\",\\\"wc\\\",\\\"grep\\\"]], decision=\\\"allow\\\")\\n\"}]"
+      }
+    },
+    "assistantSeeds": [
+      {
+        "path": "/tmp/.codex/AGENTS.md",
+        "text": "Be kind."
+      },
+      {
+        "path": "/tmp/.codex/skills",
+        "sweep": true
+      },
+      {
+        "path": "/tmp/.codex/skills/a-skill/.hefyn-managed",
+        "text": ""
+      },
+      {
+        "path": "/tmp/.codex/skills/a-skill/SKILL.md",
+        "text": "x"
+      },
+      {
+        "path": "/tmp/.codex/skills/a-skill/sub/f.txt",
+        "text": "y"
+      }
+    ]
+  },
+  "opencode": {
+    "name": "OpenCode",
+    "description": "Open-source coding agent that works with many models.",
+    "api": "anthropic",
+    "actsWithoutAsking": false,
+    "binary": {
+      "cmd": "./opencode",
+      "args": [
+        "acp"
+      ]
+    },
+    "configDir": "/tmp/.config/opencode",
+    "instructionsFile": "AGENTS.md",
+    "skillsDir": "/tmp/.config/opencode/skills",
+    "mcpConfig": "/tmp/.config/opencode/opencode.json (mcp)",
+    "acp|undefined|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "term|undefined|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "acp|undefined|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "term|undefined|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "acp|undefined|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "term|undefined|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":null}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":null}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":null}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":null}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":null}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":null}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"m-1\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"model\":\"anthropic/m-1\",\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"m-1\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"model\":\"anthropic/m-1\",\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"m-1\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"model\":\"anthropic/m-1\",\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"m-1\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"model\":\"anthropic/m-1\",\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"m-1\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"model\":\"anthropic/m-1\",\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"m-1\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"model\":\"anthropic/m-1\",\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"acme/m-1\",\"provider\":\"openrouter\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"openrouter\"],\"model\":\"openrouter/acme/m-1\",\"small_model\":\"openrouter/acme/m-1\",\"provider\":{\"openrouter\":{\"npm\":\"@ai-sdk/openai-compatible\",\"name\":\"openrouter\",\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"},\"models\":{\"acme/m-1\":{\"name\":\"acme/m-1\"}}}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"acme/m-1\",\"provider\":\"openrouter\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"openrouter\"],\"model\":\"openrouter/acme/m-1\",\"small_model\":\"openrouter/acme/m-1\",\"provider\":{\"openrouter\":{\"npm\":\"@ai-sdk/openai-compatible\",\"name\":\"openrouter\",\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"},\"models\":{\"acme/m-1\":{\"name\":\"acme/m-1\"}}}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"acme/m-1\",\"provider\":\"openrouter\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"openrouter\"],\"model\":\"openrouter/acme/m-1\",\"small_model\":\"openrouter/acme/m-1\",\"provider\":{\"openrouter\":{\"npm\":\"@ai-sdk/openai-compatible\",\"name\":\"openrouter\",\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"},\"models\":{\"acme/m-1\":{\"name\":\"acme/m-1\"}}}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"acme/m-1\",\"provider\":\"openrouter\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"openrouter\"],\"model\":\"openrouter/acme/m-1\",\"small_model\":\"openrouter/acme/m-1\",\"provider\":{\"openrouter\":{\"npm\":\"@ai-sdk/openai-compatible\",\"name\":\"openrouter\",\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"},\"models\":{\"acme/m-1\":{\"name\":\"acme/m-1\"}}}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"acme/m-1\",\"provider\":\"openrouter\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"openrouter\"],\"model\":\"openrouter/acme/m-1\",\"small_model\":\"openrouter/acme/m-1\",\"provider\":{\"openrouter\":{\"npm\":\"@ai-sdk/openai-compatible\",\"name\":\"openrouter\",\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"},\"models\":{\"acme/m-1\":{\"name\":\"acme/m-1\"}}}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"acme/m-1\",\"provider\":\"openrouter\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"openrouter\"],\"model\":\"openrouter/acme/m-1\",\"small_model\":\"openrouter/acme/m-1\",\"provider\":{\"openrouter\":{\"npm\":\"@ai-sdk/openai-compatible\",\"name\":\"openrouter\",\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"},\"models\":{\"acme/m-1\":{\"name\":\"acme/m-1\"}}}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"m-2\",\"provider\":\"mistral\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"mistral\"],\"model\":\"mistral/m-2\",\"small_model\":\"mistral/m-2\",\"provider\":{\"mistral\":{\"npm\":\"@ai-sdk/openai-compatible\",\"name\":\"mistral\",\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"},\"models\":{\"m-2\":{\"name\":\"m-2\"}}}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"m-2\",\"provider\":\"mistral\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"mistral\"],\"model\":\"mistral/m-2\",\"small_model\":\"mistral/m-2\",\"provider\":{\"mistral\":{\"npm\":\"@ai-sdk/openai-compatible\",\"name\":\"mistral\",\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"},\"models\":{\"m-2\":{\"name\":\"m-2\"}}}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"m-2\",\"provider\":\"mistral\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"mistral\"],\"model\":\"mistral/m-2\",\"small_model\":\"mistral/m-2\",\"provider\":{\"mistral\":{\"npm\":\"@ai-sdk/openai-compatible\",\"name\":\"mistral\",\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"},\"models\":{\"m-2\":{\"name\":\"m-2\"}}}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"m-2\",\"provider\":\"mistral\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"mistral\"],\"model\":\"mistral/m-2\",\"small_model\":\"mistral/m-2\",\"provider\":{\"mistral\":{\"npm\":\"@ai-sdk/openai-compatible\",\"name\":\"mistral\",\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"},\"models\":{\"m-2\":{\"name\":\"m-2\"}}}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"m-2\",\"provider\":\"mistral\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/opencode/9.9.9/opencode",
+        "acp"
+      ],
+      "env": {
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"mistral\"],\"model\":\"mistral/m-2\",\"small_model\":\"mistral/m-2\",\"provider\":{\"mistral\":{\"npm\":\"@ai-sdk/openai-compatible\",\"name\":\"mistral\",\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"},\"models\":{\"m-2\":{\"name\":\"m-2\"}}}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"m-2\",\"provider\":\"mistral\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"mistral\"],\"model\":\"mistral/m-2\",\"small_model\":\"mistral/m-2\",\"provider\":{\"mistral\":{\"npm\":\"@ai-sdk/openai-compatible\",\"name\":\"mistral\",\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"},\"models\":{\"m-2\":{\"name\":\"m-2\"}}}}},\"force\":true}]"
+      }
+    },
+    "term|sid|11111111-2222-3333-4444-555555555555": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "term|sid|ses_abc123": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode --session ses_abc123"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "term|sid|bad; rm -rf /": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/opencode/9.9.9/opencode "
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "XDG_CONFIG_HOME": "/tmp/.config",
+        "XDG_DATA_HOME": "/tmp/.local/share",
+        "XDG_STATE_HOME": "/tmp/.local/state",
+        "XDG_CACHE_HOME": "/tmp/.cache",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "OPENCODE_DISABLE_AUTOUPDATE": "true",
+        "OPENCODE_DISABLE_MODELS_FETCH": "true",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.config/opencode/opencode.json\",\"text\":\"{\\n  \\\"$schema\\\": \\\"https://opencode.ai/config.json\\\",\\n  \\\"autoupdate\\\": false,\\n  \\\"share\\\": \\\"disabled\\\",\\n  \\\"permission\\\": {\\n    \\\"edit\\\": \\\"ask\\\",\\n    \\\"bash\\\": \\\"ask\\\",\\n    \\\"webfetch\\\": \\\"deny\\\"\\n  }\\n}\"},{\"path\":\"/tmp/.config/opencode/opencode.json\",\"json\":{\"enabled_providers\":[\"anthropic\"],\"provider\":{\"anthropic\":{\"options\":{\"baseURL\":\"http://127.0.0.1:4711/v1\",\"apiKey\":\"hefyn-gateway\"}}}},\"force\":true}]"
+      }
+    },
+    "assistantSeeds": [
+      {
+        "path": "/tmp/.config/opencode/AGENTS.md",
+        "text": "Be kind."
+      },
+      {
+        "path": "/tmp/.config/opencode/skills",
+        "sweep": true
+      },
+      {
+        "path": "/tmp/.config/opencode/skills/a-skill/.hefyn-managed",
+        "text": ""
+      },
+      {
+        "path": "/tmp/.config/opencode/skills/a-skill/SKILL.md",
+        "text": "x"
+      },
+      {
+        "path": "/tmp/.config/opencode/skills/a-skill/sub/f.txt",
+        "text": "y"
+      }
+    ]
+  },
+  "pi-acp": {
+    "name": "Pi",
+    "description": "A small, fast open-source coding agent.",
+    "api": "anthropic",
+    "actsWithoutAsking": true,
+    "npm": {
+      "package": "pi-acp",
+      "bin": "pi-acp",
+      "extra": [
+        "@earendil-works/pi-coding-agent@1.4.0"
+      ],
+      "check": [
+        "node_modules/.bin/pi"
+      ]
+    },
+    "configDir": "/tmp/.pi/agent",
+    "instructionsFile": "AGENTS.md",
+    "skillsDir": "/tmp/.pi/agent/skills",
+    "mcpConfig": "/tmp/.pi/agent/mcp.json",
+    "acp|undefined|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "term|undefined|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "acp|undefined|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "term|undefined|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "acp|undefined|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "term|undefined|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":null}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":null}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":null}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":null}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":null}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":null}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"m-1\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"anthropic\\\",\\\"defaultModel\\\":\\\"m-1\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"m-1\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"anthropic\\\",\\\"defaultModel\\\":\\\"m-1\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"m-1\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"anthropic\\\",\\\"defaultModel\\\":\\\"m-1\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"m-1\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"anthropic\\\",\\\"defaultModel\\\":\\\"m-1\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"m-1\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"anthropic\\\",\\\"defaultModel\\\":\\\"m-1\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"m-1\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"anthropic\\\",\\\"defaultModel\\\":\\\"m-1\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"acme/m-1\",\"provider\":\"openrouter\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"openrouter\\\",\\\"defaultModel\\\":\\\"acme/m-1\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"openrouter\":{\"baseUrl\":\"http://127.0.0.1:4711/v1\",\"api\":\"openai-completions\",\"apiKey\":\"hefyn-gateway\",\"models\":[{\"id\":\"acme/m-1\"}]}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"acme/m-1\",\"provider\":\"openrouter\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"openrouter\\\",\\\"defaultModel\\\":\\\"acme/m-1\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"openrouter\":{\"baseUrl\":\"http://127.0.0.1:4711/v1\",\"api\":\"openai-completions\",\"apiKey\":\"hefyn-gateway\",\"models\":[{\"id\":\"acme/m-1\"}]}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"acme/m-1\",\"provider\":\"openrouter\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"openrouter\\\",\\\"defaultModel\\\":\\\"acme/m-1\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"openrouter\":{\"baseUrl\":\"http://127.0.0.1:4711/v1\",\"api\":\"openai-completions\",\"apiKey\":\"hefyn-gateway\",\"models\":[{\"id\":\"acme/m-1\"}]}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"acme/m-1\",\"provider\":\"openrouter\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"openrouter\\\",\\\"defaultModel\\\":\\\"acme/m-1\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"openrouter\":{\"baseUrl\":\"http://127.0.0.1:4711/v1\",\"api\":\"openai-completions\",\"apiKey\":\"hefyn-gateway\",\"models\":[{\"id\":\"acme/m-1\"}]}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"acme/m-1\",\"provider\":\"openrouter\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"openrouter\\\",\\\"defaultModel\\\":\\\"acme/m-1\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"openrouter\":{\"baseUrl\":\"http://127.0.0.1:4711/v1\",\"api\":\"openai-completions\",\"apiKey\":\"hefyn-gateway\",\"models\":[{\"id\":\"acme/m-1\"}]}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"acme/m-1\",\"provider\":\"openrouter\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"openrouter\\\",\\\"defaultModel\\\":\\\"acme/m-1\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"openrouter\":{\"baseUrl\":\"http://127.0.0.1:4711/v1\",\"api\":\"openai-completions\",\"apiKey\":\"hefyn-gateway\",\"models\":[{\"id\":\"acme/m-1\"}]}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"m-2\",\"provider\":\"mistral\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"mistral\\\",\\\"defaultModel\\\":\\\"m-2\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"mistral\":{\"baseUrl\":\"http://127.0.0.1:4711/v1\",\"api\":\"openai-completions\",\"apiKey\":\"hefyn-gateway\",\"models\":[{\"id\":\"m-2\"}]}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"m-2\",\"provider\":\"mistral\"}|undefined": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"mistral\\\",\\\"defaultModel\\\":\\\"m-2\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"mistral\":{\"baseUrl\":\"http://127.0.0.1:4711/v1\",\"api\":\"openai-completions\",\"apiKey\":\"hefyn-gateway\",\"models\":[{\"id\":\"m-2\"}]}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"m-2\",\"provider\":\"mistral\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"mistral\\\",\\\"defaultModel\\\":\\\"m-2\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"mistral\":{\"baseUrl\":\"http://127.0.0.1:4711/v1\",\"api\":\"openai-completions\",\"apiKey\":\"hefyn-gateway\",\"models\":[{\"id\":\"m-2\"}]}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"m-2\",\"provider\":\"mistral\"}|light": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"mistral\\\",\\\"defaultModel\\\":\\\"m-2\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"mistral\":{\"baseUrl\":\"http://127.0.0.1:4711/v1\",\"api\":\"openai-completions\",\"apiKey\":\"hefyn-gateway\",\"models\":[{\"id\":\"m-2\"}]}}},\"force\":true}]"
+      }
+    },
+    "acp|{\"model\":\"m-2\",\"provider\":\"mistral\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi-acp"
+      ],
+      "env": {
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"mistral\\\",\\\"defaultModel\\\":\\\"m-2\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"mistral\":{\"baseUrl\":\"http://127.0.0.1:4711/v1\",\"api\":\"openai-completions\",\"apiKey\":\"hefyn-gateway\",\"models\":[{\"id\":\"m-2\"}]}}},\"force\":true}]"
+      }
+    },
+    "term|{\"model\":\"m-2\",\"provider\":\"mistral\"}|dark": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/settings.json\",\"text\":\"{\\\"defaultProvider\\\":\\\"mistral\\\",\\\"defaultModel\\\":\\\"m-2\\\"}\"},{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"mistral\":{\"baseUrl\":\"http://127.0.0.1:4711/v1\",\"api\":\"openai-completions\",\"apiKey\":\"hefyn-gateway\",\"models\":[{\"id\":\"m-2\"}]}}},\"force\":true}]"
+      }
+    },
+    "term|sid|11111111-2222-3333-4444-555555555555": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "term|sid|ses_abc123": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "term|sid|bad; rm -rf /": {
+      "cmd": [
+        "/opt/hefyn/run-agent.sh",
+        "sh",
+        "-c",
+        "exec /opt/agents/pi-acp/9.9.9/node_modules/.bin/pi --continue"
+      ],
+      "env": {
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "PI_CODING_AGENT_DIR": "/tmp/.pi/agent",
+        "PI_ACP_PI_COMMAND": "/opt/agents/pi-acp/9.9.9/node_modules/.bin/pi",
+        "ANTHROPIC_API_KEY": "hefyn-gateway",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "PI_TELEMETRY": "0",
+        "HEFYN_SEED": "[{\"path\":\"/tmp/.pi/agent/models.json\",\"json\":{\"providers\":{\"anthropic\":{\"baseUrl\":\"http://127.0.0.1:4711\"}}},\"force\":true}]"
+      }
+    },
+    "assistantSeeds": [
+      {
+        "path": "/tmp/.pi/agent/AGENTS.md",
+        "text": "Be kind."
+      },
+      {
+        "path": "/tmp/.pi/agent/skills",
+        "sweep": true
+      },
+      {
+        "path": "/tmp/.pi/agent/skills/a-skill/.hefyn-managed",
+        "text": ""
+      },
+      {
+        "path": "/tmp/.pi/agent/skills/a-skill/SKILL.md",
+        "text": "x"
+      },
+      {
+        "path": "/tmp/.pi/agent/skills/a-skill/sub/f.txt",
+        "text": "y"
+      }
+    ]
+  }
+}

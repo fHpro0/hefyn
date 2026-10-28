@@ -1,0 +1,81 @@
+{
+  "kind": "agent",
+  "id": "opencode",
+  "name": "OpenCode",
+  "description": "Open-source coding agent that works with many models.",
+  "distribution": { "registry": "opencode" },
+  "api": "anthropic",
+  "asksBeforeActing": true,
+  "sharedLogin": true,
+  "login": {
+    "flow": "terminal",
+    "command": "exec {{installDir}}/opencode auth login",
+    "home": { "env": "XDG_DATA_HOME" },
+    "status": { "format": "text", "command": "exec {{installDir}}/opencode auth list", "signedIn": "\\b[1-9][0-9]* credentials?\\b" },
+    "logout": "rm -f \"$XDG_DATA_HOME/opencode/auth.json\"",
+    "hosts": ["auth.openai.com:443", "chatgpt.com:443", "api.openai.com:443", "github.com:443", "api.github.com:443"],
+    "verified": false
+  },
+  "launch": { "binary": { "cmd": "./opencode", "args": ["acp"] } },
+  "terminal": {
+    "command": "exec {{installDir}}/opencode ",
+    "resume": { "sessionId": "opencode", "command": "exec {{installDir}}/opencode --session {{sessionId}}" }
+  },
+  "env": {
+    "XDG_CONFIG_HOME": "/tmp/.config",
+    "XDG_DATA_HOME": "/tmp/.local/share",
+    "XDG_STATE_HOME": "/tmp/.local/state",
+    "XDG_CACHE_HOME": "/tmp/.cache",
+    "ANTHROPIC_API_KEY": "{{dummyKey}}",
+    "OPENCODE_DISABLE_AUTOUPDATE": "true",
+    "OPENCODE_DISABLE_MODELS_FETCH": "true"
+  },
+  "config": { "dir": "/tmp/.config/opencode", "instructionsFile": "AGENTS.md", "skillsDir": "/tmp/.config/opencode/skills", "commandsDir": "/tmp/.config/opencode/commands", "mcpConfig": "/tmp/.config/opencode/opencode.json (mcp)" },
+  "mcpServers": { "path": "/tmp/.config/opencode/opencode.json", "format": "json-merge", "content": { "mcp": { "{{server.name}}": { "type": "remote", "url": "{{server.url}}", "enabled": true } } } },
+  "headless": {
+    "command": "exec {{installDir}}/opencode run --agent build \"$@\"",
+    "readOnly": "exec {{installDir}}/opencode run --agent plan \"$@\""
+  },
+  "files": [
+    {
+      "path": "/tmp/.config/opencode/opencode.json", "format": "json", "indent": 2,
+      "content": {
+        "$schema": "https://opencode.ai/config.json",
+        "autoupdate": false,
+        "share": "disabled",
+        "permission": { "edit": "ask", "bash": "ask", "webfetch": "deny" }
+      }
+    }
+  ],
+  "providers": [
+    {
+      "api": "anthropic",
+      "files": [{
+        "path": "/tmp/.config/opencode/opencode.json", "format": "json-merge",
+        "content": {
+          "enabled_providers": ["anthropic"],
+          "model": "anthropic/{{assistant.model}}",
+          "provider": { "anthropic": { "options": { "baseURL": "{{gatewayBase}}/v1", "apiKey": "{{dummyKey}}" } } }
+        }
+      }]
+    },
+    {
+      "api": "openai-chat",
+      "files": [{
+        "path": "/tmp/.config/opencode/opencode.json", "format": "json-merge",
+        "content": {
+          "enabled_providers": ["{{provider.id}}"],
+          "model": "{{provider.id}}/{{assistant.model}}",
+          "small_model": "{{provider.id}}/{{assistant.model}}",
+          "provider": {
+            "{{provider.id}}": {
+              "npm": "@ai-sdk/openai-compatible", "name": "{{provider.id}}",
+              "options": { "baseURL": "{{gatewayBase}}/v1", "apiKey": "{{dummyKey}}" },
+              "models": { "{{assistant.model}}": { "name": "{{assistant.model}}" } }
+            }
+          }
+        }
+      }]
+    }
+  ]
+}

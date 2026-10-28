@@ -1,0 +1,51 @@
+{
+  "kind": "agent",
+  "id": "claude-acp",
+  "name": "Claude Code",
+  "description": "Anthropic's coding agent.",
+  "distribution": { "registry": "claude-acp" },
+  "api": "anthropic",
+  "cliVersion": { "packageJson": "node_modules/@anthropic-ai/claude-code/package.json", "field": "version" },
+  "asksBeforeActing": true,
+  "sharedLogin": false,
+  "login": {
+    "flow": "code",
+    "command": "bin=$(ls {{installDir}}/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1); exec \"$bin\" auth login",
+    "home": { "env": "CLAUDE_CONFIG_DIR", "dir": "/claude-home" },
+    "status": { "format": "json", "command": "bin=$(ls {{installDir}}/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1); exec \"$bin\" auth status", "signedIn": "loggedIn", "account": ["email", "subscriptionType"] },
+    "logout": "bin=$(ls {{installDir}}/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1); exec \"$bin\" auth logout",
+    "hosts": ["api.anthropic.com:443", "platform.claude.com:443", "claude.ai:443"],
+    "verified": true
+  },
+  "launch": { "wrapper": { "adapter": "claude-code", "npm": { "package": "@anthropic-ai/claude-code", "check": ["node_modules/@anthropic-ai/claude-code/package.json"] } } },
+  "terminal": {
+    "command": "bin=$(ls {{installDir}}/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1); if ls \"$CLAUDE_CONFIG_DIR\"/projects/*/{{sessionId}}.jsonl >/dev/null 2>&1; then exec \"$bin\" --resume {{sessionId}}; else exec \"$bin\" --session-id {{sessionId}}; fi"
+  },
+  "env": {
+    "ANTHROPIC_BASE_URL": "{{gatewayBase}}",
+    "ANTHROPIC_API_KEY": "{{dummyKey}}",
+    "CLAUDE_CONFIG_DIR": "/tmp/.claude",
+    "DISABLE_AUTOUPDATER": "1",
+    "DISABLE_INSTALLATION_CHECKS": "1",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "DISABLE_TELEMETRY": "1",
+    "DISABLE_ERROR_REPORTING": "1"
+  },
+  "config": { "dir": "/tmp/.claude", "instructionsFile": "CLAUDE.md", "skillsDir": "/tmp/.claude/skills", "commandsDir": "/tmp/.claude/commands", "mcpConfig": "/tmp/.claude/.claude.json (mcpServers; or `claude mcp add`)" },
+  "mcpServers": { "path": "/tmp/.claude/.claude.json", "format": "json-merge", "content": { "mcpServers": { "{{server.name}}": { "type": "http", "url": "{{server.url}}" } } } },
+  "headless": {
+    "command": "exec $(ls {{installDir}}/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1) -p --permission-mode acceptEdits \"$@\"",
+    "readOnly": "exec $(ls {{installDir}}/node_modules/@anthropic-ai/claude-code-linux-*/claude | head -n1) -p --permission-mode plan \"$@\""
+  },
+  "helperAllow": { "path": "/tmp/.claude/settings.json", "format": "json-merge", "at": ["permissions", "allow"], "rule": "Bash(sh {{helper.script}}:*)" },
+  "files": [
+    {
+      "path": "/tmp/.claude/.claude.json", "format": "json-merge",
+      "content": { "hasCompletedOnboarding": true, "hasSeenAutoDefaultNudge": true, "customApiKeyResponses": { "approved": ["{{dummyKey}}"] }, "projects": { "/files": { "hasTrustDialogAccepted": true } }, "theme": "{{theme}}" }
+    },
+    { "path": "/tmp/.claude/.claude.json", "format": "json-merge", "force": false, "content": { "theme": "dark" } },
+    { "path": "/tmp/.claude/settings.json", "format": "json-merge", "force": false, "content": { "permissions": { "defaultMode": "default" } } },
+    { "path": "/tmp/.claude/settings.json", "format": "json-merge", "when": "assistant", "content": { "$when": "assistant.model", "model": "{{assistant.model}}" } },
+    { "path": "/tmp/.claude/settings.json", "format": "json-merge", "content": { "$when": "theme", "theme": "{{theme}}" } }
+  ]
+}

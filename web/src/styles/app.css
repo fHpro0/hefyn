@@ -1,32 +1,81 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* hefyn v3 tokens (docs/UI-DESIGN.md): zinc neutrals, one brand colour (seal violet). The .dark class is set by the theme script in Layout.astro. */
+/* hefyn v3 tokens (docs/UI-DESIGN.md): zinc neutrals, one brand colour (hefyn blue, the logo colour). The .dark class is set by the theme script in web/shell.ts.
+   shadcn/ui variable names filled with hefyn's values; surface, raised, seal, success, warning and the *-ink colours are hefyn's own. */
 :root {
-  --background: #ffffff; --surface: #fafafa; --raised: #ffffff; --foreground: #09090b; --muted: #71717a; --border: #e4e4e7; --input: #a1a1aa;
-  --seal: #5b3df5; --on-seal: #ffffff;
+  --background: #ffffff; --foreground: #14161a; --surface: #f6f7f8; --raised: #ffffff;
+  --card: var(--raised); --card-foreground: var(--foreground); --popover: var(--raised); --popover-foreground: var(--foreground);
+  --primary: #14161a; --primary-foreground: #fafafa; --secondary: #f1f2f4; --secondary-foreground: #14161a;
+  --muted: #f1f2f4; --muted-foreground: #5b616b; --accent: #f1f2f4; --accent-foreground: #14161a;
+  --destructive: #dc2626; --border: #e3e5e8; --input: #858b94; /* 3.5:1 on white (WCAG 1.4.11 for field borders) */ --ring: #9aa0a8; --radius: 0.571rem; /* 8 px at the 14 px root */
+  --sidebar: #f6f7f8; --sidebar-foreground: #14161a; --sidebar-primary: #14161a; --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #eceef0; --sidebar-accent-foreground: #14161a; --sidebar-border: #e3e5e8; --sidebar-ring: #9aa0a8;
+  --seal: #2563eb; --on-seal: #ffffff;
   --success: #16a34a; --danger: #dc2626; --warning: #ca8a04;
   --success-ink: #15803d; --danger-ink: #b91c1c; --warning-ink: #854d0e;
   --float: 0 8px 28px -6px rgb(9 9 11 / 0.16), 0 1px 3px rgb(9 9 11 / 0.08);
   color-scheme: light;
 }
 .dark {
-  --background: #09090b; --surface: #111113; --raised: #18181b; --foreground: #fafafa; --muted: #a1a1aa; --border: #27272a; --input: #63636b;
-  --seal: #8b7bff; --on-seal: #09090b;
+  --background: #09090b; --foreground: #fafafa; --surface: #111113; --raised: #18181b;
+  --primary: #fafafa; --primary-foreground: #09090b; --secondary: #27272a; --secondary-foreground: #fafafa;
+  --muted: #27272a; --muted-foreground: #a1a1aa; --accent: #27272a; --accent-foreground: #fafafa;
+  --destructive: #f87171; --border: #27272a; --input: #63636b; --ring: #71717a;
+  --sidebar: #111113; --sidebar-foreground: #fafafa; --sidebar-primary: #fafafa; --sidebar-primary-foreground: #09090b;
+  --sidebar-accent: #27272a; --sidebar-accent-foreground: #fafafa; --sidebar-border: #27272a; --sidebar-ring: #71717a;
+  --seal: #60a5fa; --on-seal: #09090b;
   --success: #4ade80; --danger: #f87171; --warning: #facc15;
   --success-ink: #4ade80; --danger-ink: #f87171; --warning-ink: #facc15;
   --float: 0 8px 28px -6px rgb(0 0 0 / 0.6), 0 1px 3px rgb(0 0 0 / 0.4);
   color-scheme: dark;
 }
 
+/* Per-user theme (docs/UI-DESIGN.md "Themes"): the script in web/shell.ts (applyTheme) sets .dark and these data attributes on <html>.
+   Zinc is the :root/.dark set above. Fixed for everyone: --seal, success/warning/danger and their inks, fonts. */
+html[data-base] { /* sidebar tokens follow the page tokens, so a base or accent change reaches the sidebar too */
+  --sidebar: var(--surface); --sidebar-foreground: var(--foreground); --sidebar-primary: var(--primary); --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent); --sidebar-accent-foreground: var(--accent-foreground); --sidebar-border: var(--border); --sidebar-ring: var(--ring);
+}
+html[data-base=neutral] { --foreground: #0a0a0a; --surface: #fafafa; --primary: #0a0a0a; --primary-foreground: #fafafa; --secondary: #f5f5f5; --secondary-foreground: #0a0a0a; --muted: #f5f5f5; --muted-foreground: #737373; --accent: #f5f5f5; --accent-foreground: #0a0a0a; --border: #e5e5e5; --input: #8a8a8a; --ring: #a3a3a3; }
+html[data-base=slate] { --foreground: #020617; --surface: #f8fafc; --primary: #020617; --primary-foreground: #f8fafc; --secondary: #f1f5f9; --secondary-foreground: #020617; --muted: #f1f5f9; --muted-foreground: #64748b; --accent: #f1f5f9; --accent-foreground: #020617; --border: #e2e8f0; --input: #7c8ca3; --ring: #94a3b8; }
+html[data-base=stone] { --foreground: #0c0a09; --surface: #fafaf9; --primary: #0c0a09; --primary-foreground: #fafaf9; --secondary: #f5f5f4; --secondary-foreground: #0c0a09; --muted: #f5f5f4; --muted-foreground: #78716c; --accent: #f5f5f4; --accent-foreground: #0c0a09; --border: #e7e5e4; --input: #8d8984; --ring: #a8a29e; }
+html.dark[data-base=neutral] { --background: #0a0a0a; --foreground: #fafafa; --surface: #121212; --raised: #171717; --primary: #fafafa; --primary-foreground: #0a0a0a; --secondary: #262626; --secondary-foreground: #fafafa; --muted: #262626; --muted-foreground: #a3a3a3; --accent: #262626; --accent-foreground: #fafafa; --border: #262626; --input: #666666; --ring: #737373; }
+html.dark[data-base=slate] { --background: #020617; --foreground: #f8fafc; --surface: #0b1120; --raised: #0f172a; --primary: #f8fafc; --primary-foreground: #020617; --secondary: #1e293b; --secondary-foreground: #f8fafc; --muted: #1e293b; --muted-foreground: #94a3b8; --accent: #1e293b; --accent-foreground: #f8fafc; --border: #1e293b; --input: #5b6a80; --ring: #64748b; }
+html.dark[data-base=stone] { --background: #0c0a09; --foreground: #fafaf9; --surface: #141211; --raised: #1c1917; --primary: #fafaf9; --primary-foreground: #0c0a09; --secondary: #292524; --secondary-foreground: #fafaf9; --muted: #292524; --muted-foreground: #a8a29e; --accent: #292524; --accent-foreground: #fafaf9; --border: #292524; --input: #6b6762; --ring: #78716c; }
+
+/* Accent: primary fill, focus ring, active sidebar item, links. --accent-fg (black or white by contrast) is computed in applyTheme. */
+html[data-accent] { --primary: var(--accent-src); --primary-foreground: var(--accent-fg); --ring: var(--accent-src); --sidebar-accent: color-mix(in srgb, var(--accent-src) 14%, var(--surface)); }
+html[data-accent] :focus-visible { outline-color: var(--ring); }
+html[data-accent] a.underline { text-decoration-color: var(--accent-src); }
+@supports (color: oklch(from red l c h)) { /* dark: same hue and chroma, lightness lifted so it holds against dark surfaces */
+  html.dark[data-accent] { --primary: oklch(from var(--accent-src) max(l, 0.72) c h); --primary-foreground: #09090b; --ring: var(--primary); }
+}
+
+html[data-radius=none] { --radius: 0; }
+html[data-radius=small] { --radius: 0.3rem; }
+html[data-radius=large] { --radius: 0.9rem; }
+/* Tailwind derives every gap, padding and height from --spacing, so compact is one variable (about 10 % tighter, icons included). */
+html[data-density=compact] { --spacing: 0.225rem; }
+html[data-text=small] { font-size: 13px; }
+html[data-text=large] { font-size: 16px; }
+
 @theme inline {
-  --color-background: var(--background); --color-surface: var(--surface); --color-raised: var(--raised);
-  --color-foreground: var(--foreground); --color-muted: var(--muted); --color-border: var(--border); --color-input: var(--input);
+  --color-background: var(--background); --color-foreground: var(--foreground); --color-surface: var(--surface); --color-raised: var(--raised);
+  --color-card: var(--card); --color-card-foreground: var(--card-foreground); --color-popover: var(--popover); --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary); --color-primary-foreground: var(--primary-foreground); --color-secondary: var(--secondary); --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted); --color-muted-foreground: var(--muted-foreground); --color-accent: var(--accent); --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive); --color-border: var(--border); --color-input: var(--input); --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar); --color-sidebar-foreground: var(--sidebar-foreground); --color-sidebar-primary: var(--sidebar-primary); --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent); --color-sidebar-accent-foreground: var(--sidebar-accent-foreground); --color-sidebar-border: var(--sidebar-border); --color-sidebar-ring: var(--sidebar-ring);
   --color-seal: var(--seal); --color-on-seal: var(--on-seal);
   --color-success: var(--success); --color-danger: var(--danger); --color-warning: var(--warning);
   --color-success-ink: var(--success-ink); --color-danger-ink: var(--danger-ink); --color-warning-ink: var(--warning-ink);
-  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --radius-sm: calc(var(--radius) * 0.6); --radius-md: calc(var(--radius) * 0.8); --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5); --radius-2xl: calc(var(--radius) * 1.8); --radius-3xl: calc(var(--radius) * 2.2); --radius-4xl: calc(var(--radius) * 2.6);
+  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   --shadow-float: var(--float);
 }
 
@@ -39,11 +88,51 @@
   .tnum { font-variant-numeric: tabular-nums; }
 }
 
+/* Identity canvas (ascii-reveal look): a halftone dot grid that fades out, and a hairline frame with "+" marks at its corners. Both follow --foreground/--border, so dark mode needs nothing extra. */
+.hf-dots { background-image: radial-gradient(color-mix(in srgb, var(--foreground) 14%, transparent) 1px, transparent 1.3px); background-size: 14px 14px; mask-image: radial-gradient(ellipse 48% 46% at 50% var(--dots-y, 42%), #000 0%, transparent 100%); }
+.hf-frame { position: relative; border-inline: 1px solid var(--border); }
+.hf-frame::before, .hf-corners::before {
+  content: ''; position: absolute; inset: -5px; pointer-events: none;
+  --c: linear-gradient(var(--border), var(--border));
+  background: var(--c), var(--c), var(--c), var(--c), var(--c), var(--c), var(--c), var(--c);
+  background-repeat: no-repeat;
+  background-size: 11px 1px, 11px 1px, 11px 1px, 11px 1px, 1px 11px, 1px 11px, 1px 11px, 1px 11px;
+  background-position: 0 5px, 100% 5px, 0 calc(100% - 5px), 100% calc(100% - 5px), 5px 0, calc(100% - 5px) 0, 5px 100%, calc(100% - 5px) 100%;
+}
+/* The composer's frame: "+" marks at the corners of a box 10 px outside the card, so the card keeps the column's width. */
+.hf-corners { position: relative; padding: 10px; margin: -10px; }
+.hf-corners::before {
+  inset: 0; --c: linear-gradient(color-mix(in srgb, var(--muted-foreground) 45%, transparent), color-mix(in srgb, var(--muted-foreground) 45%, transparent));
+  background-size: 9px 1px, 9px 1px, 9px 1px, 9px 1px, 1px 9px, 1px 9px, 1px 9px, 1px 9px;
+  background-position: 0 4px, 100% 4px, 0 calc(100% - 4px), 100% calc(100% - 4px), 4px 0, calc(100% - 4px) 0, 4px 100%, calc(100% - 4px) 100%;
+}
+
 /* Floating layers: subtle blur at 80 % opacity. */
 .float { background: color-mix(in srgb, var(--raised) 80%, transparent); backdrop-filter: blur(12px); box-shadow: var(--float); }
 
-/* A seal in the user's own text: a 2 px violet bar under it. New seals slide in once (the only ambient motion). */
-.seal-bar { background: linear-gradient(var(--seal), var(--seal)) left bottom / 100% 2px no-repeat; padding-bottom: 2px; }
-@keyframes seal-in { from { background-size: 0% 2px; } to { background-size: 100% 2px; } }
-@media (prefers-reduced-motion: no-preference) { .seal-bar.fresh { animation: seal-in 180ms ease-out; } }
+/* Agent text floats in word by word (float-words.ts); --i counts only the words that are new, capped so a long message still ends within about a second. */
+@keyframes hf-float { from { opacity: 0; transform: translateY(4px); filter: blur(3px); } }
+.hf-word { display: inline-block; animation: hf-float 350ms ease-out backwards; animation-delay: min(calc(var(--i, 0) * 18ms), 1000ms); }
+
+/* Content that arrives while the page is open: new transcript items rise, a lane switch crossfades, active sub-agents slide in and out, the working line shimmers. */
+@keyframes hf-rise { from { opacity: 0; transform: translateY(6px); } }
+@keyframes hf-fade { from { opacity: 0; } }
+@keyframes hf-row-in { from { opacity: 0; transform: scale(0.96); } }
+@keyframes hf-row-out { from { grid-template-rows: 1fr; opacity: 1; } to { grid-template-rows: 0fr; opacity: 0; } }
+@keyframes hf-shimmer { to { background-position: -200% 0; } }
+.hf-rise { animation: hf-rise 250ms ease-out backwards; }
+.hf-fade { animation: hf-fade 150ms ease-out; }
+.hf-row-in { animation: hf-row-in 200ms ease-out backwards; }
+.hf-row-out { display: grid; animation: hf-row-out 250ms ease-in forwards; }
+.hf-shimmer { background: linear-gradient(90deg, var(--muted-foreground) 40%, var(--foreground) 50%, var(--muted-foreground) 60%) 0 0 / 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: hf-shimmer 2.2s linear infinite; }
+/* The working mark: three dots on a small orbit, each one breathing out of step. */
+@keyframes hf-orbit { to { transform: rotate(360deg); } }
+@keyframes hf-dot { 50% { opacity: 0.35; scale: 0.65; } }
+.hf-working { position: relative; display: inline-block; width: 13px; height: 13px; flex-shrink: 0; animation: hf-orbit 1.6s cubic-bezier(0.55, 0.1, 0.45, 0.9) infinite; }
+.hf-working i { position: absolute; left: 50%; top: 50%; width: 3px; height: 3px; margin: -1.5px; border-radius: 9999px; background: currentColor; animation: hf-dot 1.6s ease-in-out infinite; }
+.hf-working i:nth-child(1) { transform: translateY(-4.5px); }
+.hf-working i:nth-child(2) { transform: rotate(120deg) translateY(-4.5px); animation-delay: -0.53s; }
+.hf-working i:nth-child(3) { transform: rotate(240deg) translateY(-4.5px); animation-delay: -1.07s; }
+@media (prefers-reduced-motion: reduce) { .hf-working { animation: none; } .hf-working i { animation: none; transform: none !important; width: 5px; height: 5px; margin: -2.5px; } .hf-working i:nth-child(n + 2) { display: none; } }
+@media (prefers-reduced-motion: reduce) { .hf-word, .hf-rise, .hf-fade, .hf-row-in { animation: none; } .hf-row-out { animation: none; display: none; } .hf-shimmer { animation: none; background: none; color: var(--muted-foreground); } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }

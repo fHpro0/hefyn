@@ -67,3 +67,20 @@ test('egress: helpers, and Node fetch honours NODE_USE_ENV_PROXY (the way the ag
     assert.match(await run('http://blocked.invalid/'), /^403 /);
   } finally { s.close(); }
 });
+
+// The proxy cannot tell users apart, so one user's connector must not widen the allowlist beyond what its OAuth flow calls.
+test('allowlist: only the OAuth endpoints of a connector are taken from its stored state, https only, never any URL found in it', async () => {
+  const { mkdtempSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  process.env.HEFYN_DATA_DIR ??= mkdtempSync(`${tmpdir()}/hefyn-egl-`);
+  const { discoveryUrls } = await import('../src/server/egress-list.ts');
+  const secrets = JSON.stringify({
+    bearer: 'https://exfil.example/steal', client: { client_id: 'c', redirect_uris: ['https://evil.example/cb'], client_uri: 'https://evil.example/' },
+    discovery: { authorizationServerUrl: 'https://auth.example.com', resourceMetadataUrl: 'https://mcp.example.com/.well-known/oauth-protected-resource',
+      authorizationServerMetadata: { issuer: 'https://auth.example.com', token_endpoint: 'https://auth.example.com/token', authorization_endpoint: 'https://login.example.com/authorize', registration_endpoint: 'http://plain.example.com/register', service_documentation: 'https://docs.evil.example/', jwks_uri: 'https://keys.evil.example/jwks' },
+      resourceMetadata: { authorization_servers: ['https://auth.example.com', 'https://second-as.example.org'], resource_documentation: 'https://docs.evil.example/' } } });
+  assert.deepEqual(discoveryUrls(secrets).sort(), ['https://auth.example.com', 'https://auth.example.com', 'https://auth.example.com', 'https://auth.example.com/token', 'https://login.example.com/authorize', 'https://mcp.example.com/.well-known/oauth-protected-resource', 'https://second-as.example.org'].sort());
+  assert.deepEqual(discoveryUrls(''), []);
+  assert.deepEqual(discoveryUrls('{"bearer":"https://exfil.example/"}'), []);
+  assert.deepEqual(discoveryUrls('{"discovery":"https://exfil.example/"}'), []);
+});

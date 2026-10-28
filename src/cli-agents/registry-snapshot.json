@@ -1,0 +1,39 @@
+{
+  "version": "1.0.0",
+  "note": "Offline fallback of the ACP Registry (https://cdn.agentclientprotocol.com/registry/v1/latest/registry.json, 2026-10-26): only the agents hefyn has a profile for, Linux downloads only. Refresh when profiles.ts changes.",
+  "agents": [
+    {
+      "id": "claude-acp", "name": "Claude Code", "version": "2.1.310", "description": "Anthropic's coding agent, the official unmodified package (not an ACP adapter: docs/WRAPPER.md)",
+      "repository": "https://github.com/anthropics/claude-code", "authors": ["Anthropic"],
+      "license": "proprietary", "license_url": "https://www.anthropic.com/legal/commercial-terms",
+      "distribution": { "npx": { "package": "@anthropic-ai/claude-code@2.1.310" } },
+      "icon": "https://cdn.agentclientprotocol.com/registry/v1/latest/claude-acp.svg"
+    },
+    {
+      "id": "codex-acp", "name": "Codex", "version": "2.2.2", "description": "ACP adapter for OpenAI's coding assistant",
+      "repository": "https://github.com/agentclientprotocol/codex-acp", "authors": ["OpenAI", "JetBrains s.r.o", "Zed Industries"],
+      "license": "Apache-2.0", "license_url": "https://github.com/agentclientprotocol/codex-acp/blob/main/LICENSE",
+      "distribution": { "npx": { "package": "@agentclientprotocol/codex-acp@2.2.2" } },
+      "icon": "https://cdn.agentclientprotocol.com/registry/v1/latest/codex-acp.svg"
+    },
+    {
+      "id": "opencode", "name": "OpenCode", "version": "1.19.4", "description": "The open source coding agent",
+      "repository": "https://github.com/anomalyco/opencode", "website": "https://opencode.ai", "authors": ["Anomaly"],
+      "license": "MIT", "license_url": "https://github.com/anomalyco/opencode/blob/dev/LICENSE",
+      "icon": "https://cdn.agentclientprotocol.com/registry/v1/latest/opencode.svg",
+      "distribution": {
+        "binary": {
+          "linux-aarch64": { "archive": "https://github.com/anomalyco/opencode/releases/download/v1.19.4/opencode-linux-arm64.tar.gz", "cmd": "./opencode", "args": ["acp"], "sha256": "8568230ccd847dc93e95b9f6894379077d3e014a16b48040743573e77c23e85f" },
+          "linux-x86_64": { "archive": "https://github.com/anomalyco/opencode/releases/download/v1.19.4/opencode-linux-x64.tar.gz", "cmd": "./opencode", "args": ["acp"], "sha256": "849bd6b3d959a1d2ef200ed1634a51c79a45ca236aa26665d75debd694805cce" }
+        }
+      }
+    },
+    {
+      "id": "pi-acp", "name": "pi ACP", "version": "0.0.34", "description": "ACP adapter for pi coding agent",
+      "repository": "https://github.com/svkozak/pi-acp", "authors": ["Sergii Kozak <svkozak@gmail.com>"],
+      "license": "MIT", "license_url": "https://github.com/svkozak/pi-acp/blob/main/LICENSE",
+      "distribution": { "npx": { "package": "pi-acp@0.0.34" } },
+      "icon": "https://cdn.agentclientprotocol.com/registry/v1/latest/pi-acp.svg"
+    }
+  ]
+}

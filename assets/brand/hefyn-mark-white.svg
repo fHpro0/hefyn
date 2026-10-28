@@ -1,1 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="t"><title id="t">hefyn</title><rect x="2" y="2" width="60" height="60" rx="14" fill="#FAFAFA"/><rect x="15" y="27" width="34" height="10" rx="3" fill="#5B3DF5"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 286 375" fill="#FFFFFF" role="img" aria-labelledby="title">
+  <title id="title">hefyn</title>
+  <rect width="103" height="375" rx="28"/>
+  <path d="M143 121H240C266 121 286 140 286 166V211C286 218 282 221 275 218C265 213 253 212 241 212H143C129 212 118 201 118 187V146C118 132 129 121 143 121Z"/>
+  <path d="M217 226H244C267 226 286 241 286 264V347C286 363 274 375 258 375H218C202 375 190 363 190 347V250C190 237 202 226 217 226Z"/>
+</svg>

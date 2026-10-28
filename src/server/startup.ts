@@ -11,4 +11,9 @@ if (prod) {
     process.exit(1);
   }
 }
+if (!prod && (env.HEFYN_KEY_MODE || 'server') === 'server' && bad(env.HEFYN_SECRET)) console.warn('[hefyn] WARNING: server-held keys (the default) with a missing, dev-only or short HEFYN_SECRET: anyone who knows it can read all keys. Fine for local dev only.');
+if (env.HEFYN_KEY_MODE && !['user', 'server'].includes(env.HEFYN_KEY_MODE)) {
+  console.error(`[hefyn] HEFYN_KEY_MODE must be "user" or "server", not "${env.HEFYN_KEY_MODE}".`);
+  process.exit(1);
+}
 export {};

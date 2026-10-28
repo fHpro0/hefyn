@@ -1,6 +1,8 @@
 *.log
 .DS_Store
 .astro
+.claude
+.serena
 .env
 .playwright-mcp
 .screenshots
@@ -8,4 +10,4 @@ data
 dist
 node_modules
 services/*/target
-web/.astro
+web/.gen

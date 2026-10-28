@@ -4,7 +4,7 @@ import type { AddressInfo } from 'node:net';
 // Minimal Anthropic Messages API stand-in. Default script: the orchestrator (system prompt mentions
 // "You orchestrate") delegates once to the `writer` agent via `task`, then answers; delegates just answer.
 // Marker scripts (a marker anywhere in the request body selects one):
-//   {{var:EMAIL_1}}  write then read /tmp/note.txt with the placeholder, then answer with it (privacy test)
+//   NOTETEST         write then read /tmp/note.txt (an address and a key), then answer with the address
 //   FILETEST         orchestrator -> writer writes /files/x.txt -> orchestrator reads it back
 //   HUBTEST          orchestrator delegates to the hub agent `hub-helper`
 //   SHELLTEST        call bash (writes /files/out.txt, links /files/p -> /etc/passwd) when the tool exists, else say so
@@ -20,6 +20,9 @@ type Plan = { tool: string; input: object } | { text: string };
 function plan(j: any, body: string, system: string): Plan {
   const results = j.messages.flatMap((m: any) => (Array.isArray(m.content) ? m.content.filter((b: any) => b.type === 'tool_result') : [])).length;
   const orchestrator = system.includes('You orchestrate');
+  // flows (test/flows-e2e.test.ts): the router step picks `refund` for REFUNDFLOW and `else` otherwise; a FLOWDRAFT step answers with a mail
+  if (system.includes('You route requests')) return { text: body.includes('REFUNDFLOW') ? 'refund' : 'else' };
+  if (body.includes('FLOWDRAFT')) return { text: 'Dear ada.lovelace@example.com, the refund is granted.' };
   if (body.includes('FILETEST')) {
     if (orchestrator) return results === 0 ? { tool: 'task', input: { agent: 'writer', description: 'file', prompt: 'FILETEST write x.txt' } } : results === 1 ? { tool: 'read', input: { path: '/files/x.txt' } } : { text: 'file check done' };
     return results === 0 ? { tool: 'write', input: { path: '/files/x.txt', content: 'hello-from-writer' } } : { text: 'written' };
@@ -37,9 +40,9 @@ function plan(j: any, body: string, system: string): Plan {
     const tool = (j.tools ?? []).find((t: any) => t.name.includes('lookup'))?.name;
     return results === 0 && tool ? { tool, input: {} } : { text: tool ? 'lookup done' : 'no mcp tool' };
   }
-  if (body.includes('{{var:EMAIL_1}}')) {
-    if (results === 0) return { tool: 'write', input: { path: '/tmp/note.txt', content: '{{var:EMAIL_1}} sk-ant-' + 'api03-ToolSideSecret0123456789abcdefXYZ' } };
-    return results === 1 ? { tool: 'read', input: { path: '/tmp/note.txt' } } : { text: 'sent it to {{var:EMAIL_1}}' };
+  if (body.includes('NOTETEST')) {
+    if (results === 0) return { tool: 'write', input: { path: '/tmp/note.txt', content: 'ada.lovelace@example.com sk-ant-' + 'api03-ToolSideSecret0123456789abcdefXYZ' } };
+    return results === 1 ? { tool: 'read', input: { path: '/tmp/note.txt' } } : { text: 'sent it to ada.lovelace@example.com' };
   }
   if (orchestrator && results === 0) return { tool: 'task', input: { agent: 'writer', description: 'haiku', prompt: 'Write a haiku about fruit.' } };
   return { text: 'apple, banana, cherry' };
@@ -62,7 +65,7 @@ export function startFake(port = 0, host = '127.0.0.1'): Promise<{ url: string; 
       if ('tool' in p) {
         res.write(ev('content_block_start', { index: 0, content_block: { type: 'tool_use', id: 'tu' + Math.random().toString(36).slice(2, 8), name: p.tool, input: {} } }));
         const json = JSON.stringify(p.input);
-        for (const part of [json.slice(0, 20), json.slice(20)]) res.write(ev('content_block_delta', { index: 0, delta: { type: 'input_json_delta', partial_json: part } })); // split mid-way: placeholders may straddle deltas
+        for (const part of [json.slice(0, 20), json.slice(20)]) res.write(ev('content_block_delta', { index: 0, delta: { type: 'input_json_delta', partial_json: part } })); // split mid-way
       } else {
         res.write(ev('content_block_start', { index: 0, content_block: { type: 'text', text: '' } }));
         res.write(ev('content_block_delta', { index: 0, delta: { type: 'text_delta', text: p.text } }));

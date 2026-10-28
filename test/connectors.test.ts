@@ -8,6 +8,9 @@ import { fakeOAuth, fakeServer } from './fake-oauth.ts';
 process.env.HEFYN_DATA_DIR = mkdtempSync(join(tmpdir(), 'hefyn-conn-'));
 process.env.HEFYN_SECRET = 'connectors-test-secret-connectors-test-1234';
 
+const vault = await import('../src/server/vault.ts');
+for (const u of ['alice', 'userA']) vault.rememberUserKey(u, vault.newKey()); // credentials are sealed with the owner's key (docs/ENCRYPTION.md)
+
 test('model OAuth: PKCE code exchange, single use, bound to the user, expiry, encrypted tokens, refresh', async () => {
   const srv = await fakeServer();
   const { registerOAuth, DbCredentialStore, resolver } = await import('../src/server/connectors.ts');
@@ -65,8 +68,54 @@ test('provider access: company providers for all, user providers only for their 
   assert.ok(!providerAllowed('userA', 'unknown'));
 });
 
+test('a company key sealed under a key that is no longer held is listed as unreadable (status error), not dropped; entering it again fixes it', async () => {
+  const { db } = await import('../src/server/appdb.ts');
+  const { companyConnections } = await import('../src/server/connectors.ts');
+  const { connect } = await import('../src/server/providers.ts');
+  const old = vault.getTeamKey();
+  vault.setTeamKey(vault.newKey());
+  connect({ id: 'openai' }, 'sk-made-earlier');
+  vault.setTeamKey(vault.newKey()); // the key mode changed: another team key is held now
+  const row = async () => (await companyConnections()).find((c) => c.id === 'openai');
+  assert.equal((await row())?.status, 'error');
+  connect({ id: 'openai' }, 'sk-entered-again');
+  assert.equal((await row())?.status, 'ok');
+  db.prepare("DELETE FROM providers WHERE id = 'openai'").run();
+  vault.setTeamKey(old);
+});
+
 test('MCP urls: internal addresses and bare service names are refused', async () => {
   const { assertPublicUrl } = await import('../src/server/mcp.ts');
-  for (const u of ['http://localhost:8787', 'http://127.0.0.1/x', 'http://10.0.0.5/', 'http://169.254.169.254/', 'http://redact:8787', 'http://[::1]/', 'file:///etc/passwd']) assert.throws(() => assertPublicUrl(u), u);
+  for (const u of ['http://localhost:8787', 'http://127.0.0.1/x', 'http://10.0.0.5/', 'http://169.254.169.254/', 'http://runner:8790', 'http://[::1]/', 'file:///etc/passwd']) assert.throws(() => assertPublicUrl(u), u);
   assert.ok(assertPublicUrl('https://mcp.example.com/mcp'));
+});
+
+test('ChatGPT login: the installation has one stable device UUID', async () => {
+  const { deviceId } = await import('../src/server/oauth.ts');
+  const id = deviceId();
+  assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  assert.equal(deviceId(), id);
+});
+
+test('OAuth flows that return to a loopback port are completed by the callback; paste is the fallback', async () => {
+  const { startFlow } = await import('../src/server/oauth.ts');
+  const flow = (redirect: string) => ({ name: 'x', login: async (i: any) => { i.notify({ type: 'auth_url', url: `https://auth.example.com/authorize?redirect_uri=${encodeURIComponent(redirect)}` }); return new Promise((_, rej) => i.signal.addEventListener('abort', () => rej(new Error('cancelled')))); } }) as any;
+  assert.equal((await startFlow('alice', 'x', flow('http://127.0.0.1:1455/auth/callback'))).callback, true);
+  assert.equal((await startFlow('alice', 'x', flow('http://localhost:53692/callback'))).callback, true);
+  assert.equal((await startFlow('alice', 'x', flow('https://platform.claude.com/oauth/code/callback'))).callback, false); // copy-the-code page
+});
+
+test('OAuth: retrying a sign-in cancels the abandoned one, so its callback port is free again', async () => {
+  const { startFlow } = await import('../src/server/oauth.ts');
+  let port = false;
+  const holdsPort = { name: 'p', login: async (i: any) => {
+    if (port) throw new Error('Port 1455 is in use');
+    port = true;
+    i.notify({ type: 'auth_url', url: 'https://auth.example.com/authorize?redirect_uri=http%3A%2F%2F127.0.0.1%3A1455%2Fcb' });
+    try { return await i.prompt({ type: 'manual_code', message: 'paste', signal: i.signal }); } finally { port = false; }
+  } } as any;
+  const first = await startFlow('bob', 'p', holdsPort);
+  const second = await startFlow('bob', 'p', holdsPort);
+  assert.equal(second.state, 'pending');
+  assert.notEqual(second.flowId, first.flowId);
 });

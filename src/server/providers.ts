@@ -3,8 +3,8 @@ import { openAICompletionsApi } from '@earendil-works/pi-ai/api/openai-completio
 import { builtinProviders } from '@earendil-works/pi-ai/providers/all';
 import type { Provider } from '@earendil-works/pi-ai';
 import { db } from './appdb.ts';
-import { withStamp } from './context.ts';
-import { decrypt, encrypt } from './crypto.ts';
+import { providerAad } from './seal.ts';
+import { sealForTeam } from './vault.ts';
 import { requestRestart } from './runtime.ts';
 
 export const CUSTOM = 'custom';
@@ -44,13 +44,13 @@ export async function validate(c: Conn, apiKey: string) {
   const url = m?.api === 'anthropic-messages' ? `${root}/v1/models` : m?.api?.startsWith('openai') ? `${root}/models` : undefined;
   if (!url) return;
   const headers: Record<string, string> = m.api === 'anthropic-messages' ? { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' } : { authorization: `Bearer ${apiKey}` };
-  const res = await withStamp('auth', () => fetch(url, { headers, signal: AbortSignal.timeout(8000) })).catch(() => undefined); // key check only: no user content
+  const res = await fetch(url, { headers, signal: AbortSignal.timeout(8000) }).catch(() => undefined);
   if (res && (res.status === 401 || res.status === 403)) throw new Error('The provider rejected this API key.');
 }
 
 export function connect(c: Conn, apiKey: string) {
   db.prepare('INSERT OR REPLACE INTO providers (id, name, base_url, enc_key, models, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(c.id, listProviders().find((p) => p.id === c.id)?.name ?? c.id, c.baseUrl ?? null, encrypt(apiKey), c.models ? JSON.stringify(c.models) : null, new Date().toISOString());
+    .run(c.id, listProviders().find((p) => p.id === c.id)?.name ?? c.id, c.baseUrl ?? null, sealForTeam(apiKey, providerAad(c.id, c.baseUrl ?? null)), c.models ? JSON.stringify(c.models) : null, new Date().toISOString());
 }
 
 // There is no public unregister in Flue: the agent process only forgets a removed provider by restarting.
@@ -61,9 +61,12 @@ export function disconnect(id: string) {
 
 export const connectedIds = () => (db.prepare('SELECT id FROM providers').all() as { id: string }[]).map((r) => r.id);
 
+/** What the model picker shows next to a name. */
+export const modelMeta = (m: any) => ({ contextWindow: m.contextWindow as number | undefined, reasoning: !!m.reasoning, vision: !!m.input?.includes('image') });
+
 export function connectedModels() {
   return (db.prepare('SELECT id, name, base_url, enc_key, models FROM providers').all() as any[]).map((r) => {
     const p = build({ id: r.id, baseUrl: r.base_url ?? undefined, models: r.models ? JSON.parse(r.models) : undefined }, 'x');
-    return { provider: r.id, name: r.name, models: p.getModels().map((m) => ({ id: `${r.id}/${m.id}`, name: m.name })) };
+    return { provider: r.id, name: r.name, models: p.getModels().map((m) => ({ id: `${r.id}/${m.id}`, name: m.name, ...modelMeta(m) })) };
   });
 }

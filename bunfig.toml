@@ -1,0 +1,3 @@
+# Bun.serve in web/serve.ts bundles the console's HTML shell with these plugins (the production build passes them to Bun.build in web/build.ts).
+[serve.static]
+plugins = ["bun-plugin-tailwind"]

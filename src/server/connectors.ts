@@ -1,9 +1,9 @@
 import type { AuthOperationOptions, Credential, CredentialInfo, CredentialStore, OAuthAuth } from '@earendil-works/pi-ai';
 import { builtinProviders } from '@earendil-works/pi-ai/providers/all';
 import { db } from './appdb.ts';
-import { withStamp } from './context.ts';
-import { decrypt, encrypt } from './crypto.ts';
-import { type AuthResolver, build, connectedModels, listProviders } from './providers.ts';
+import { openProviderSecret, openUserSecret, providerAad } from './seal.ts';
+import { LockedError, sealForTeam, sealForUser } from './vault.ts';
+import { type AuthResolver, build, connectedModels, listProviders, modelMeta } from './providers.ts';
 
 // Per-user model connectors. A user's provider `anthropic` is registered in the agent as `u-<userId>-anthropic`.
 // Shared by web and agent (no Flue imports).
@@ -26,11 +26,14 @@ export const registerOAuth = (provider: string, impl: OAuthAuth) => void custom.
 export const oauthOf = (provider: string): OAuthAuth | undefined => custom.get(provider) ?? builtinProviders().find((p) => p.id === provider)?.auth.oauth;
 
 interface Row { user_id: string; provider: string; base_url: string | null; models: string | null; enc: string; created_at: string }
+// The endpoint is part of the AAD: a credential cannot be pointed at another base_url by editing the row.
+const credAad = (userId: string, provider: string, baseUrl: string | null) => `cred:${userId}:${provider}:${baseUrl ?? ''}`;
 const rowOf = (userId: string, provider: string) => db.prepare('SELECT * FROM user_credentials WHERE user_id = ? AND provider = ?').get(userId, provider) as Row | undefined;
 const put = (userId: string, provider: string, cred: Credential, extra?: { baseUrl?: string; models?: string[] }) => {
   const old = rowOf(userId, provider);
+  const baseUrl = extra ? extra.baseUrl ?? null : old?.base_url ?? null;
   db.prepare('INSERT OR REPLACE INTO user_credentials (user_id, provider, base_url, models, enc, created_at) VALUES (?,?,?,?,?,?)')
-    .run(userId, provider, extra ? extra.baseUrl ?? null : old?.base_url ?? null, extra ? (extra.models ? JSON.stringify(extra.models) : null) : old?.models ?? null, encrypt(JSON.stringify(cred)), old?.created_at ?? new Date().toISOString());
+    .run(userId, provider, baseUrl, extra ? (extra.models ? JSON.stringify(extra.models) : null) : old?.models ?? null, sealForUser(userId, JSON.stringify(cred), credAad(userId, provider, baseUrl)), old?.created_at ?? new Date().toISOString());
 };
 
 /** pi-ai CredentialStore over app.db, scoped to one user (tokens are encrypted at rest). */
@@ -38,9 +41,9 @@ export class DbCredentialStore implements CredentialStore {
   private static chains = new Map<string, Promise<unknown>>();
   userId: string;
   constructor(userId: string) { this.userId = userId; }
-  async read(provider: string) { const r = rowOf(this.userId, provider); return r ? (JSON.parse(decrypt(r.enc)) as Credential) : undefined; }
+  async read(provider: string) { const r = rowOf(this.userId, provider); return r ? (JSON.parse(openUserSecret(this.userId, r.enc, credAad(this.userId, provider, r.base_url))) as Credential) : undefined; }
   async list(): Promise<readonly CredentialInfo[]> {
-    return (db.prepare('SELECT provider, enc FROM user_credentials WHERE user_id = ?').all(this.userId) as any[]).map((r) => ({ providerId: r.provider, type: (JSON.parse(decrypt(r.enc)) as Credential).type }));
+    return (db.prepare('SELECT provider, base_url, enc FROM user_credentials WHERE user_id = ?').all(this.userId) as any[]).map((r) => ({ providerId: r.provider, type: (JSON.parse(openUserSecret(this.userId, r.enc, credAad(this.userId, r.provider, r.base_url))) as Credential).type }));
   }
   modify(provider: string, fn: (c: Credential | undefined) => Promise<Credential | undefined>, _o?: AuthOperationOptions) {
     const k = `${this.userId}/${provider}`;
@@ -59,8 +62,8 @@ export class DbCredentialStore implements CredentialStore {
 export class CompanyCredentialStore implements CredentialStore {
   private static chains = new Map<string, Promise<unknown>>();
   async read(provider: string) {
-    const r = db.prepare("SELECT enc_key FROM providers WHERE id = ? AND kind = 'oauth'").get(provider) as { enc_key: string } | undefined;
-    return r ? (JSON.parse(decrypt(r.enc_key)) as Credential) : undefined;
+    const r = db.prepare("SELECT id, base_url, enc_key FROM providers WHERE id = ? AND kind = 'oauth'").get(provider) as { id: string; base_url: string | null; enc_key: string } | undefined;
+    return r ? (JSON.parse(openProviderSecret(r)) as Credential) : undefined;
   }
   async list(): Promise<readonly CredentialInfo[]> {
     return (db.prepare("SELECT id FROM providers WHERE kind = 'oauth'").all() as any[]).map((r) => ({ providerId: r.id, type: 'oauth' as const }));
@@ -71,7 +74,7 @@ export class CompanyCredentialStore implements CredentialStore {
       if (next) {
         const old = db.prepare('SELECT created_at, base_url, models FROM providers WHERE id = ?').get(provider) as { created_at: string; base_url: string | null; models: string | null } | undefined;
         db.prepare("INSERT OR REPLACE INTO providers (id, name, base_url, enc_key, models, created_at, kind) VALUES (?,?,?,?,?,?, 'oauth')")
-          .run(provider, nameOf(provider), old?.base_url ?? null, encrypt(JSON.stringify(next)), old?.models ?? null, old?.created_at ?? new Date().toISOString());
+          .run(provider, nameOf(provider), old?.base_url ?? null, sealForTeam(JSON.stringify(next), providerAad(provider, old?.base_url ?? null)), old?.models ?? null, old?.created_at ?? new Date().toISOString());
       }
       return next ?? (await this.read(provider));
     });
@@ -86,23 +89,24 @@ export const resolver = (userId: string, provider: string): AuthResolver => make
 export const companyResolver = (provider: string): AuthResolver => makeResolver(new CompanyCredentialStore(), provider);
 const makeResolver = (store: CredentialStore, provider: string): AuthResolver => async () => {
   const oauth = oauthOf(provider);
-  const cred = await store.modify(provider, async (cur) => (cur?.type === 'oauth' && oauth && cur.expires < Date.now() + 60_000 ? withStamp('auth', () => oauth.refresh(cur, AbortSignal.timeout(30_000))) : undefined));
+  const cred = await store.modify(provider, async (cur) => (cur?.type === 'oauth' && oauth && cur.expires < Date.now() + 60_000 ? oauth.refresh(cur, AbortSignal.timeout(30_000)) : undefined));
   if (!cred) throw new Error(`the credential for ${provider} was removed`);
   return { auth: cred.type === 'oauth' ? await oauth!.toAuth(cred) : { apiKey: cred.key } };
 };
 
 /** Company providers with their sign-in kind and health (`expired` = the OAuth refresh failed: sign in again). */
 export async function companyConnections() {
-  const rows = db.prepare('SELECT id, name, kind, enc_key FROM providers ORDER BY id').all() as { id: string; name: string; kind: string; enc_key: string }[];
+  const rows = db.prepare('SELECT id, name, kind, base_url, enc_key FROM providers ORDER BY id').all() as { id: string; name: string; kind: string; base_url: string | null; enc_key: string }[];
   return Promise.all(rows.map(async (r) => {
     let status: 'ok' | 'expired' | 'error' = 'ok';
-    if (r.kind === 'oauth') {
-      try {
-        const cred = JSON.parse(decrypt(r.enc_key)) as Credential;
+    try { // a key sealed under a key this mode no longer has (e.g. made in user mode, read in server mode) is `error`: shown with a way to enter it again, never dropped
+      const secret = openProviderSecret(r);
+      if (r.kind === 'oauth') {
+        const cred = JSON.parse(secret) as Credential;
         if (cred.type === 'oauth' && cred.expires < Date.now() + 60_000) await companyResolver(r.id)().catch(() => { status = 'expired'; });
-      } catch { status = 'error'; }
-    }
-    return { id: r.id, name: r.name, kind: r.kind as 'oauth' | 'api_key', status };
+      }
+    } catch (e) { if (e instanceof LockedError) throw e; status = 'error'; }
+    return { id: r.id, name: r.name, kind: r.kind as 'oauth' | 'api_key', status, deprecated: r.kind === 'oauth' }; // deprecated: a subscription sign-in; new ones are refused, replace it with an API key
   }));
 }
 
@@ -125,22 +129,23 @@ export async function ownConnections(userId: string) {
   return Promise.all(rows.map(async (r) => {
     let kind: string = 'api_key', status: 'ok' | 'expired' | 'error' = 'ok';
     try {
-      const cred = JSON.parse(decrypt(r.enc)) as Credential;
+      const cred = JSON.parse(openUserSecret(userId, r.enc, credAad(userId, r.provider, r.base_url))) as Credential;
       kind = cred.type;
       if (cred.type === 'oauth' && cred.expires < Date.now() + 60_000) await resolver(userId, r.provider)().catch(() => { status = 'expired'; });
-    } catch { status = 'error'; }
-    return { provider: r.provider, name: nameOf(r.provider), kind, status, baseUrl: r.base_url, createdAt: r.created_at };
+    } catch (e) { if (e instanceof LockedError) throw e; status = 'error'; }
+    return { provider: r.provider, name: nameOf(r.provider), kind, status, deprecated: kind === 'oauth', baseUrl: r.base_url, createdAt: r.created_at };
   }));
 }
 
 /** Everything this user may pick: company models plus their own. */
 export function availableModels(userId: string) {
-  const company = connectedModels().flatMap((p) => p.models.map((m) => ({ id: m.id, name: m.name, provider: p.provider, scope: 'company' as const, label: `${m.name} (${p.name}, company)` })));
+  const company = connectedModels().flatMap((p) => p.models.map((m) => ({ id: m.id, name: m.name, provider: p.provider, providerName: p.name, ...modelMeta(m), scope: 'company' as const, label: `${m.name} (${p.name}, company)` })));
   const own = (db.prepare('SELECT * FROM user_credentials WHERE user_id = ?').all(userId) as unknown as Row[]).flatMap((r) => {
     const ns = nsId(userId, r.provider);
-    return build(conn(r), 'x', ns).getModels().map((m) => ({ id: `${ns}/${m.id}`, name: m.name, provider: ns, scope: 'own' as const, label: `${m.name} (${nameOf(r.provider)}, yours)` }));
+    return build(conn(r), 'x', ns).getModels().map((m) => ({ id: `${ns}/${m.id}`, name: m.name, provider: ns, providerName: nameOf(r.provider), ...modelMeta(m), scope: 'own' as const, label: `${m.name} (${nameOf(r.provider)}, yours)` }));
   });
   return [...company, ...own];
 }
 
-export const conversationModel = (id: string) => (db.prepare('SELECT model FROM conversations WHERE id = ?').get(id) as { model: string | null } | undefined)?.model ?? undefined;
+export const conversationThinking = (id: string) => (db.prepare('SELECT thinking FROM conversations WHERE id = ?').get(id) as { thinking: string | null } | undefined)?.thinking ?? undefined;
+export const conversationModel =(id: string) => (db.prepare('SELECT model FROM conversations WHERE id = ?').get(id) as { model: string | null } | undefined)?.model ?? undefined;

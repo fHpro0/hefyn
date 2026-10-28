@@ -1,8 +1,10 @@
 import { createReadStream } from 'node:fs';
 import * as fsp from 'node:fs/promises';
 import { dirname, join, resolve as resolveHost, sep } from 'node:path';
+import { Readable } from 'node:stream';
 import { posix } from 'node:path';
-import type { FileStat } from '@flue/runtime'; // type only: the web process never loads Flue
+
+export interface FileStat { isFile: boolean; isDirectory: boolean; isSymbolicLink?: boolean; size?: number; mtime?: Date; birthtime?: Date }
 
 // Per-user storage: <HEFYN_DATA_DIR>/users/<userId>/files/ (persistent) and .../tmp/<conversationId>/ (scratch).
 // Agents see `/files/...` and `/tmp/...`; nothing outside those two roots is reachable.
@@ -134,7 +136,7 @@ export function userFs({ userId, conversationId }: { userId: string; conversatio
       if (!('real' in r)) return { isFile: false, isDirectory: true };
       const s = await wrap(p, () => fsp.stat(r.real));
       const l = await fsp.lstat(r.real);
-      return { isFile: s.isFile(), isDirectory: s.isDirectory(), isSymbolicLink: l.isSymbolicLink(), size: s.size, mtime: s.mtime };
+      return { isFile: s.isFile(), isDirectory: s.isDirectory(), isSymbolicLink: l.isSymbolicLink(), size: s.size, mtime: s.mtime, birthtime: s.birthtimeMs > 0 ? s.birthtime : undefined };
     },
     async readdir(p: string): Promise<string[]> {
       const r = await locate(p);
@@ -173,7 +175,8 @@ export function userFs({ userId, conversationId }: { userId: string; conversatio
         if (!(await fsp.lstat((await need(p, { noFollow: true })).real).then(() => true, () => false))) return p;
       }
     },
-    openRead: (real: string) => createReadStream(real),
+    /** Streamed read of an existing file (same surface as containerStorage). */
+    async readStream(p: string, _size?: number): Promise<ReadableStream<Uint8Array>> { return Readable.toWeb(createReadStream(await self.hostPath(p))) as ReadableStream<Uint8Array>; },
   };
   return self;
 }

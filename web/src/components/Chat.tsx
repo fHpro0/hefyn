@@ -1,249 +1,179 @@
-import { useFlueAgent, type FlueConversationMessage, type FlueConversationPart } from '@flue/react';
-import { ArrowUp, FileText, Loader2, Paperclip, PanelRight, SquareTerminal, X } from 'lucide-react';
+import { MessageSquareOff } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import Markdown from 'react-markdown';
-import { api, can, upload, useLoad, type Me, type Runtime } from './api';
-import { Ledger, SealedText, useLedger, type Seal } from './Audit';
+import { trpc } from '@/lib/trpc';
+import { can, useQuery, type Me, type Runtime } from './api';
+import { AgentChoice, AgentIcon, ComposerPicker, AssistantIcon, ViewToggle, findAgent, loadAgents, loadAssistants, type CliView } from './AgentChoice';
+import { createBody, handoffFor, mayOpen, type Handoff } from './chat-routing';
+import { agentId } from './agent-catalog';
+import { AGENT_NAMES, CliConversation } from './CliChat';
+import { useComposer } from './composer';
+import { liveMentions, type Mention } from './composer-text';
+import { PromptInput, PromptInputSubmit, PromptInputTools } from './ai-elements';
 import Shell from './Shell';
-import ToolStep, { normalize, ThinkingStep, Timeline } from './Tools';
-import { Err, Kbd, Mark, mdComponents, shortcut, toast } from './ui';
+import { StatusPill } from './ActivityStatus';
+import { toast } from './toast';
+import { AsciiMark, Err } from './ui';
+import { useWebModules } from '../modules/registry';
 
-interface Convo { id: string; title: string; createdAt?: string; model?: string | null }
-interface Blocked { text: string; href?: string; label?: string }
-interface Attachment { name: string; path: string }
-interface ModelOpt { id: string; name: string; provider: string; scope: 'company' | 'own' }
+// Every chat is a hosted CLI agent (src/cli-agents, docs/WRAPPER.md); Claude Code unless an Assistant or the agent picker says otherwise.
+// A chat made before 2026-10-27 on the retired hefyn chat (no agent) opens as a notice; the old/ folder keeps the code.
+interface Convo { id: string; title: string; assistantId?: string | null; createdAt?: string; pinned?: boolean; scheduled?: boolean; agent?: string | null; view?: CliView }
 const hashId = () => location.hash.slice(1);
 
 export default function Chat() {
-  const convos = useLoad<Convo[]>('/api/conversations');
+  const convos = useQuery(() => trpc.conversations.list.query() as Promise<Convo[]>);
   const [id, setId] = useState(hashId());
-  const [pending, setPending] = useState<string>(); // first message of a brand-new conversation
-  const [carry, setCarry] = useState<File[]>(); // files dropped on a brand-new conversation, uploaded once it exists
-  const [newModel, setNewModel] = useState(''); // model picked before the conversation exists
-  const [ledgerOpen, setLedgerOpen] = useState(() => innerWidth >= 1100 && localStorage.getItem('hefyn-ledger') === '1');
-  const [terminalOpen, setTerminalOpen] = useState(false);
-  const [tick, setTick] = useState(0);
-  useEffect(() => { const f = () => setId(hashId()); addEventListener('hashchange', f); return () => removeEventListener('hashchange', f); }, []);
-  useEffect(() => { localStorage.setItem('hefyn-ledger', ledgerOpen ? '1' : '0'); }, [ledgerOpen]);
-  useEffect(() => { // ⌘L / ⌘J and the palette send these
-    const f = (e: Event) => { const w = (e as CustomEvent).detail; if (w === 'ledger') setLedgerOpen((o) => !o); if (w === 'terminal') setTerminalOpen((o) => !o); };
-    const n = () => setTimeout(() => document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Message"]')?.focus(), 0);
-    addEventListener('hefyn-toggle', f); addEventListener('hefyn-newchat', n);
-    return () => { removeEventListener('hefyn-toggle', f); removeEventListener('hefyn-newchat', n); };
+  const [pending, setPending] = useState<Handoff<string>>(); // first message of a brand-new conversation, for that conversation only
+  const [pendingMentions, setPendingMentions] = useState<Mention[]>([]);
+  const attempt = useRef(0); // bumps whenever the reader leaves the new-chat screen: a create still in flight must not open or send
+  useEffect(() => { const f = () => { attempt.current++; setId(hashId()); }; addEventListener('hashchange', f); return () => removeEventListener('hashchange', f); }, []);
+  useEffect(() => {
+    const n = () => { attempt.current++; setAgent(''); setTimeout(() => document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Message"]')?.focus(), 0); };
+    addEventListener('hefyn-newchat', n);
+    return () => removeEventListener('hefyn-newchat', n);
   }, []);
-  const ledger = useLedger(id || undefined, tick);
   const current = convos.data?.find((c) => c.id === id);
+  const reloadRef = useRef(convos.reload); reloadRef.current = convos.reload;
+  useEffect(() => { const f = () => void reloadRef.current(); addEventListener('hefyn-threads', f); return () => removeEventListener('hefyn-threads', f); }, []); // a rename in the list reaches the header
+  const webMods = useWebModules();
 
+  const agents = useQuery(loadAgents);
+  const agentName = (id: string) => findAgent(agents.data, id)?.name ?? AGENT_NAMES[agentId(id)] ?? id;
+  const assistants = useQuery(loadAssistants);
+  const [agent, setAgent] = useState(''); // '' = the default: the highlighted Assistant, else Claude Code
+  const [picked, setPicked] = useState(() => new URLSearchParams(location.search).get('assistant') ?? ''); // "Try it" links /?assistant=<id>
+  const [view, setView] = useState<CliView>('chat');
+  const list = assistants.data ?? [];
+  const assistantId = picked && list.some((a) => a.id === picked && a.available) ? picked : (list.find((a) => a.isDefault && a.available) ?? list.find((a) => a.available))?.id ?? '';
+  const chosen = agent ? undefined : list.find((a) => a.id === assistantId);
+  const noAgent = !!agents.data && !!assistants.data && !list.some((a) => a.available) && !agents.data.some((a) => a.available);
   const create = async (title: string) => {
-    const { id } = await api('/api/conversations', 'POST', { title });
-    if (newModel) await api(`/api/conversations/${id}`, 'PATCH', { model: newModel }).catch(() => {});
-    setNewModel(''); convos.reload(); dispatchEvent(new Event('hefyn-threads'));
+    const { id } = await trpc.conversations.create.mutate(createBody({ title, agent, view, assistantId }));
+    await convos.reload(); // the list says which view to draw
+    setAgent('');
+    dispatchEvent(new Event('hefyn-threads'));
     return id as string;
   };
-  const tog = (on: boolean) => `inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-[13px] font-medium transition-colors ${on ? 'bg-foreground/[0.08] text-foreground' : 'text-muted hover:bg-foreground/5 hover:text-foreground'}`;
+  const assistant = current?.assistantId ? list.find((a) => a.id === current.assistantId) : undefined;
+  const setCliView = async (v: CliView) => {
+    if (!current || v === (current.view ?? 'chat')) return;
+    try {
+      await trpc.conversations.update.mutate({ id, view: v }); convos.reload();
+      if (!localStorage.getItem('hefyn-cli-view-note')) { localStorage.setItem('hefyn-cli-view-note', '1'); toast(v === 'terminal' ? 'Same session, shown as the agent’s own terminal.' : 'Same session, shown as a chat.'); }
+    } catch (x) { toast((x as Error).message, true); }
+  };
   const actions = (
     <>
-      <ModelPicker id={id || undefined} value={id ? current?.model ?? '' : newModel} onChange={id ? convos.reload : setNewModel} />
-      {id && (
-        <button aria-pressed={ledgerOpen} aria-label={`Privacy ledger, ${ledger.count} ${ledger.count === 1 ? 'seal' : 'seals'}`} title={`Privacy ledger ${shortcut('L')}`} onClick={() => setLedgerOpen(!ledgerOpen)} className={tog(ledgerOpen)}>
-          <PanelRight size={16} aria-hidden /><span className={`tnum rounded-md px-1 text-xs ${ledger.count ? 'bg-seal/15 text-seal' : ''}`}>{ledger.count}</span>
-        </button>
+      {id && <StatusPill id={id} />}
+      {id && assistant && (
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs font-medium whitespace-nowrap text-foreground" title={assistant.description || undefined}><AssistantIcon name={assistant.icon} size={13} /><span className="max-sm:sr-only">{assistant.name}</span>
+          {current?.agent && <span className="text-muted-foreground max-sm:sr-only">· {agentName(current.agent)}</span>}</span>
       )}
-      {id && <button aria-pressed={terminalOpen} aria-label="Terminal" title={`Terminal ${shortcut('J')}`} onClick={() => setTerminalOpen(!terminalOpen)} className={tog(terminalOpen)}><SquareTerminal size={16} aria-hidden /></button>}
+      {id && current?.agent && (<>
+        {!assistant && <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-seal/12 px-2 py-1 text-xs font-medium whitespace-nowrap text-seal"><AgentIcon src={findAgent(agents.data, current.agent)?.icon} size={13} /><span className="max-sm:sr-only">{agentName(current.agent)}</span></span>}
+        <ViewToggle view={current.view ?? 'chat'} onChange={setCliView} />
+      </>)}
     </>
   );
 
+  const pickerFor = (me: Me) => <ComposerPicker agents={agents.data ?? []} agent={agent} assistants={list} assistant={assistantId} onPick={(v) => { setAgent(v.agent); if (v.assistant) setPicked(v.assistant); }} canManage={can(me, 'models.manage')} sandbox={can(me, 'sandbox.shell')} />;
+  const pickerBar =<>{current && webMods.flatMap((m) => m.chatBadges ?? []).map((B, i) => <B key={i} chat={current} variant="header" />)}</>;
   return (
-    <Shell title={id ? current?.title ?? 'Thread' : 'New chat'} actions={actions} panelOpen={!!id && ledgerOpen} onPanelClose={() => setLedgerOpen(false)} panel={<Ledger audit={ledger.audit} onClose={() => setLedgerOpen(false)} />}>
+    <Shell title={id ? current?.title ?? 'Thread' : <span className="font-normal text-muted-foreground">New chat</span>} actions={<>{actions}{pickerBar}</>}>
       {(me, rt) => <Body me={me} rt={rt}>{(blocked) => id
-        ? <Conversation key={id} id={id} blocked={blocked} first={pending} onSent={() => setPending(undefined)} carry={carry} onCarried={() => setCarry(undefined)} seals={ledger.seals} fresh={ledger.fresh} onTurn={() => setTick((t) => t + 1)} terminalOpen={terminalOpen} onTerminalClose={() => setTerminalOpen(false)} />
-        : <Conversation key="new" blocked={blocked} seals={[]} fresh={ledger.fresh}
-            onFirst={async (text) => { const id = await create(text); setPending(text); location.hash = id; }}
-            onAttach={async (files) => { const id = await create('New chat'); setCarry(files); location.hash = id; }} />}</Body>}
+        ? !convos.data || (current?.assistantId && !assistants.data) ? null /* the lists say which agent this chat runs on */
+          : current?.agent ? <CliConversation key={id} id={id} agent={current.agent} name={assistant?.name ?? agentName(current.agent)} view={current.view ?? 'chat'} first={handoffFor(pending, id)} firstMentions={pendingMentions} onSent={() => setPending(undefined)} />
+          : <Retired />
+        : <NewChat blocked={blocked}
+            picker={pickerFor(me)}
+            start={<AgentChoice agents={agents.data ?? []} agent={agent} view={view} onView={setView} picker={agent && view === 'terminal' ? pickerFor(me) : undefined} onStart={async () => { const at = attempt.current, id = await create(agentName(agent)); if (mayOpen(at, attempt.current, hashId())) location.hash = id; }} />}
+            who={noAgent ? '' : agent ? agentName(agent) : chosen?.agent ? chosen.name : 'Claude Code'} noAgent={noAgent ? (can(me, 'models.manage') ? 'admin' : 'user') : undefined} hideForm={!!agent && view === 'terminal'}
+            onFirst={async (text, mentions) => {
+              const at = attempt.current; // the screen this message was typed on
+              const id = await create(text.slice(0, 60) || 'New chat');
+              if (!mayOpen(at, attempt.current, hashId())) return; // the reader moved on: the new chat stays in the list, nothing is sent anywhere else
+              setPending({ id, value: text }); setPendingMentions(mentions); location.hash = id; // the chat links are written once the chat has an id (CliChat)
+            }} />}</Body>}
     </Shell>
   );
 }
 
-// First run: admins go to "Connect a model" from the chat page only; settings stay reachable.
+interface Blocked { text: string; href?: string; label?: string }
 function Body({ me, rt, children }: { me: Me; rt?: Runtime; children: (blocked?: Blocked) => React.ReactNode }) {
-  const redirect = can(me, 'models.manage') && !me.providerConnected;
-  useEffect(() => { if (redirect) location.href = '/settings/models#connect'; }, [redirect]);
-  if (redirect) return null;
-  const admin = can(me, 'models.manage');
   return <>{children(!can(me, 'models.use') ? { text: 'Your role cannot use models. Ask an admin for access.' }
-    : !me.modelReady ? { text: admin ? 'No default model is chosen yet.' : 'An admin still needs to choose the default models.', href: admin ? '/settings/models' : undefined, label: 'Choose models' }
     : rt && rt.state !== 'running' ? { text: 'hefyn is restarting. You can send again in a moment.' } : undefined)}</>;
 }
 
-function ModelPicker({ id, value, onChange }: { id?: string; value: string; onChange: (m: string) => void }) {
-  const { data } = useLoad<ModelOpt[]>('/api/models/available');
-  if (!data?.length) return null;
+function Retired() {
   return (
-    <label className="flex items-center gap-2 text-[13px] text-muted"><span className="sr-only">Model</span>
-      <select className="h-8 max-w-52 rounded-lg border border-border bg-background px-2 text-[13px] text-foreground" value={value}
-        onChange={async (e) => { const m = e.target.value; if (!id) return onChange(m); try { await api(`/api/conversations/${id}`, 'PATCH', { model: m || null }); onChange(m); } catch (x) { toast((x as Error).message, true); } }}>
-        <option value="">Default model</option>
-        {(['company', 'own'] as const).map((sc) => data.some((m) => m.scope === sc) && <optgroup key={sc} label={sc === 'company' ? 'Company models' : 'My connections'}>{data.filter((m) => m.scope === sc).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</optgroup>)}
-      </select>
-    </label>
-  );
-}
-
-// The thread's shell commands and their output, dark in both themes.
-export function TerminalDrawer({ messages, onClose }: { messages: FlueConversationMessage[]; onClose: () => void }) {
-  const runs = messages.flatMap((m) => m.parts.filter((p): p is Extract<FlueConversationPart, { type: 'dynamic-tool' }> => p.type === 'dynamic-tool' && p.toolName === 'bash'));
-  const end = useRef<HTMLDivElement>(null);
-  useEffect(() => { end.current?.scrollIntoView({ block: 'end' }); }, [runs.length]);
-  return (
-    <section aria-label="Terminal" className="flex h-60 shrink-0 flex-col border-t border-border bg-[#09090b] text-[#fafafa]">
-      <div className="flex h-9 shrink-0 items-center justify-between border-b border-white/10 pr-1 pl-3 text-xs text-[#a1a1aa]"><span>Terminal <Kbd>{shortcut('J')}</Kbd></span>
-        <button className="grid size-7 place-items-center rounded-md hover:bg-white/10" aria-label="Close terminal" onClick={onClose}><X size={14} /></button></div>
-      <div className="min-h-0 grow overflow-auto p-3 font-mono text-[12.5px] leading-5">
-        {!runs.length && <p className="text-[#a1a1aa]">No commands yet. Shell commands the agent runs in this thread appear here.</p>}
-        {runs.map((p, i) => {
-          const o = normalize(p.state === 'output-available' ? p.output : p.state === 'output-error' ? p.errorText : undefined);
-          return (
-            <div key={i} className="mb-3">
-              <div className="break-words whitespace-pre-wrap"><span className="text-[#4ade80]">$</span> {String((p.input as any)?.command ?? '')}</div>
-              {p.state === 'input-available' && <div className="text-[#a1a1aa]">running…</div>}
-              {o.stdout !== undefined || o.stderr !== undefined ? <>{o.stdout && <pre className="break-words whitespace-pre-wrap">{o.stdout}</pre>}{o.stderr && <pre className="break-words whitespace-pre-wrap text-[#f87171]">{o.stderr}</pre>}</>
-                : o.text && <pre className="break-words whitespace-pre-wrap">{o.text}</pre>}
-              {o.exit !== undefined && o.exit !== 0 && <div className="text-[#f87171]">exit {o.exit}</div>}
-            </div>
-          );
-        })}
-        <div ref={end} />
+    <div className="grid grow place-items-center px-5 text-center">
+      <div className="grid max-w-sm justify-items-center gap-2 text-muted-foreground">
+        <MessageSquareOff size={28} aria-hidden />
+        <p className="text-sm font-medium text-foreground">This chat used the retired hefyn chat.</p>
+        <p className="text-[13px] leading-5">hefyn now runs every chat on a coding agent such as Claude Code. This one can not be opened any more, but you can delete it from the list or start a new chat.</p>
+        <a className="text-[13px] font-medium text-foreground underline underline-offset-2" href="/#">Start a new chat</a>
       </div>
-    </section>
+    </div>
   );
 }
 
-function Conversation({ id, first, onSent, onFirst, blocked, carry, onCarried, onAttach, seals, fresh, onTurn, terminalOpen, onTerminalClose }: {
-  id?: string; first?: string; onSent?: () => void; onFirst?: (t: string) => Promise<void>; blocked?: Blocked;
-  carry?: File[]; onCarried?: () => void; onAttach?: (f: File[]) => Promise<void>; seals: Seal[]; fresh: Set<string>; onTurn?: () => void;
-  terminalOpen?: boolean; onTerminalClose?: () => void;
-}) {
-  const agent = useFlueAgent({ url: id ? `/agents/configurable/${id}` : undefined });
+const STARTERS = ['Summarise a document', 'Draft a reply to a customer', 'Compare options in a table'];
+
+/** The new-chat screen: pick an Assistant or an agent, type the first message. */
+function NewChat({ start, picker, who, noAgent, hideForm, blocked, onFirst }: { start: React.ReactNode; picker: React.ReactNode; who: string; noAgent?: 'admin' | 'user'; hideForm: boolean; blocked?: Blocked; onFirst: (text: string, mentions: Mention[]) => Promise<void> }) {
   const [text, setText] = useState('');
   const [err, setErr] = useState('');
-  const [files, setFiles] = useState<Attachment[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [drag, setDrag] = useState(false);
-  const sent = useRef(false);
-  const scroller = useRef<HTMLDivElement>(null);
-  const composer = useRef<HTMLFormElement>(null);
-  const stick = useRef(true); // was the reader at the bottom? then new content keeps following
-  const [pad, setPad] = useState(120);
   const area = useRef<HTMLTextAreaElement>(null);
-  const busy = agent.status === 'submitted' || agent.status === 'streaming';
-  const failed = agent.settlements.filter((s) => s.outcome === 'failed').at(-1);
-  const visible = agent.messages.filter((m) => m.display === 'visible');
-  useEffect(() => { if (first && !sent.current) { sent.current = true; agent.sendMessage(first).catch((e) => setErr(e.message)); onSent?.(); } }, [first]);
-  const toBottom = () => { const el = scroller.current; if (el && stick.current) el.scrollTop = el.scrollHeight; };
-  useEffect(toBottom, [agent.messages, pad]);
-  useEffect(() => { // keep the transcript padded by the composer's height as it grows (lines, attachments) and when the terminal opens
-    const c = composer.current, sc = scroller.current;
-    if (!c || !sc) return;
-    const ro = new ResizeObserver(() => { setPad(c.offsetHeight); toBottom(); });
-    ro.observe(c); ro.observe(sc);
-    return () => ro.disconnect();
-  }, []);
-  useEffect(() => { const a = area.current; if (a) { a.style.height = 'auto'; a.style.height = `${Math.min(a.scrollHeight, 200)}px`; } }, [text]);
-  useEffect(() => { if (carry && id) { attach(carry); onCarried?.(); } }, [carry, id]);
-  useEffect(() => { onTurn?.(); }, [agent.status, visible.length]); // the audit row for a turn arrives with it
-  useEffect(() => { if (id) dispatchEvent(new CustomEvent('hefyn-busy', { detail: { id, busy } })); }, [busy]);
-
-  async function attach(list: File[]) {
-    if (!list.length || blocked) return;
-    if (!id) return void onAttach?.(list).catch((x) => setErr(x.message));
-    setUploading(true); setErr('');
-    try {
-      const r = await upload<{ saved?: Attachment[]; path?: string; name?: string }>(`/api/conversations/${id}/attachments`, list);
-      setFiles((f) => [...f, ...(r.saved ?? (r.path ? [{ name: r.name ?? r.path.split('/').pop()!, path: r.path }] : []))]);
-    } catch (x) { setErr((x as Error).message); }
-    setUploading(false);
-  }
-
-  async function submit(e: React.FormEvent) {
+  const composer = useComposer({ text, setText, area });
+  useEffect(() => { area.current?.focus(); }, [blocked]);
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const t = text.trim();
-    if ((!t && !files.length) || busy || blocked) return;
-    const msg = [t, ...files.map((f) => `Attached: ${f.path}`)].filter(Boolean).join('\n\n');
-    setText(''); setFiles([]); setErr('');
-    try { onFirst ? await onFirst(msg) : await agent.sendMessage(msg); } catch (x) { setErr((x as Error).message); }
-  }
-
+    if (!t || blocked || composer.busy) return;
+    if (await composer.exec(t)) return;
+    setErr(''); setText('');
+    try { await onFirst(t, liveMentions(t, composer.mentions)); composer.clear(); } catch (x) { setText(t); setErr((x as Error).message); } // not delivered: keep the draft
+  };
   return (
-    <div className="flex min-h-0 grow flex-col">
-    <div className="relative min-h-0 grow" onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setDrag(true); } }}
-      onDragLeave={(e) => e.currentTarget === e.target && setDrag(false)} onDrop={(e) => { e.preventDefault(); setDrag(false); attach([...e.dataTransfer.files]); }}>
-      {drag && <div className="pointer-events-none absolute inset-0 z-20 m-3 grid place-items-center rounded-xl border-2 border-dashed border-foreground bg-foreground/[0.04] text-sm font-medium">Drop files to attach them</div>}
-      <div ref={scroller} className="absolute inset-0 overflow-y-auto" aria-live="polite"
-        onScroll={(e) => { const el = e.currentTarget; stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80; }}>
-        <div className="mx-auto grid max-w-[44rem] grid-cols-[minmax(0,1fr)] gap-4 px-5 pt-6" style={{ paddingBottom: pad + 16 }}>
-          {!visible.length && (
-            <div className="grid justify-items-center gap-3 py-24 text-center">
-              <Mark size={40} /><h1 className="text-xl leading-7 font-semibold">What should we work on?</h1>
-              <p className="max-w-sm text-sm leading-[22px] text-muted">Ask in plain language. Personal data is sealed before anything reaches the model, and you can check it in the ledger.</p>
-            </div>
-          )}
-          {visible.map((m) => <Message key={m.id} m={m} seals={seals} fresh={fresh} />)}
-          {busy && <p className="text-[13px] text-muted">Working…</p>}
-          <Err>{err || (agent.status === 'error' && failed ? (failed as any)?.error?.message || 'The request failed. Try sending it again.' : '')}</Err>
-        </div>
-      </div>
-      <form ref={composer} onSubmit={submit} className="absolute inset-x-0 bottom-0 px-4 pb-4">
-        <div className="mx-auto max-w-[44rem]">
-          {(files.length > 0 || uploading) && (
-            <ul className="mb-2 flex flex-wrap gap-1.5" aria-label="Attachments">
-              {files.map((f) => <li key={f.path} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-raised py-0.5 pr-1 pl-2 text-xs"><FileText size={12} aria-hidden className="text-muted" />{f.name}
-                <button type="button" aria-label={`Remove ${f.name}`} className="rounded p-0.5 hover:bg-foreground/5" onClick={() => setFiles(files.filter((x) => x !== f))}><X size={12} /></button></li>)}
-              {uploading && <li className="inline-flex items-center gap-1.5 text-xs text-muted"><Loader2 size={12} className="animate-spin" aria-hidden />Uploading…</li>}
-            </ul>
-          )}
-          <div className="float flex items-end gap-1 rounded-xl p-1.5 ring-1 ring-border focus-within:ring-2 focus-within:ring-foreground">
-            <label className={`grid size-8 shrink-0 cursor-pointer place-items-center rounded-lg text-muted hover:bg-foreground/5 hover:text-foreground has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-foreground ${blocked ? 'pointer-events-none opacity-50' : ''}`} title="Attach files">
-              <Paperclip size={16} aria-hidden /><span className="sr-only">Attach files</span>
-              <input type="file" multiple className="sr-only" disabled={!!blocked} onChange={(e) => { attach([...(e.target.files ?? [])]); e.target.value = ''; }} />
-            </label>
-            {blocked ? <div role="status" className="flex min-h-8 grow flex-wrap items-center gap-x-3 px-1.5 py-1 text-sm text-muted"><span>{blocked.text}</span>{blocked.href && <a className="font-medium text-foreground underline underline-offset-2" href={blocked.href}>{blocked.label}</a>}</div> : (
-              <textarea ref={area} rows={1} aria-label="Message" value={text} placeholder="Ask hefyn. Shift+Enter adds a line."
-                className="max-h-52 min-h-8 grow resize-none bg-transparent px-1.5 py-1 text-sm outline-none placeholder:text-muted"
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} />
+    <div className="relative isolate grid min-h-full grow grid-rows-[34fr_auto_66fr] overflow-hidden px-5 py-6" {...(hideForm ? {} : composer.drop)}>
+      {composer.overlay}
+      <div className="hf-dots pointer-events-none absolute inset-0 -z-10" aria-hidden />
+      <div className="row-start-2 mx-auto w-full max-w-[640px]">
+        <div className="grid justify-items-center gap-6 pb-7 text-center"><AsciiMark /><h1 className="text-[1.75rem] leading-9 font-semibold tracking-[-0.02em]">What should we work on?</h1>
+          {noAgent && <p className="-mt-3 text-[13px] text-muted-foreground">{noAgent === 'admin' ? <>No agent is set up yet. <a className="font-medium text-foreground underline underline-offset-2" href="/settings/providers">Set up an agent</a></> : 'Ask your admin to set up an agent.'}</p>}</div>
+        {start}
+        {!hideForm && (
+          <form onSubmit={submit} className="w-full">
+            {blocked && (
+              <div role="status" className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border bg-muted/60 px-3 py-2 text-[13px] text-muted-foreground">
+                <span>{blocked.text}</span>{blocked.href && <a className="font-medium text-foreground underline underline-offset-2" href={blocked.href}>{blocked.label}</a>}
+              </div>
             )}
-            <button className="grid size-8 shrink-0 place-items-center rounded-lg bg-foreground text-background transition-opacity disabled:opacity-30" aria-label="Send" disabled={(!text.trim() && !files.length) || busy || uploading || !!blocked}><ArrowUp size={16} /></button>
-          </div>
-        </div>
-      </form>
-    </div>
-      {terminalOpen && id && <TerminalDrawer messages={visible} onClose={() => onTerminalClose?.()} />}
+            <div className="hf-corners">
+              {composer.popover}
+              <PromptInput className={blocked ? 'opacity-60' : ''}>
+                {composer.attachments}
+                <textarea ref={area} rows={3} aria-label="Message" value={text} disabled={!!blocked} placeholder={`Ask ${who ? `${who} ` : ''}anything…`}
+                  className="min-h-8 w-full resize-none bg-transparent px-2 py-1.5 text-base outline-none placeholder:text-muted-foreground sm:text-sm"
+                  onChange={composer.bind.onChange} onSelect={composer.bind.onSelect} onPaste={composer.bind.onPaste} aria-expanded={composer.bind['aria-expanded']}
+                  onKeyDown={(e) => { if (composer.bind.onKeyDown(e)) return; if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} />
+                <PromptInputTools>
+                  {composer.attachButton}
+                  {picker}
+                  <div className="grow" />
+                  <PromptInputSubmit busy={false} typed={!!text.trim()} onStop={() => {}} disabled={!text.trim() || !!blocked || composer.busy} />
+                </PromptInputTools>
+              </PromptInput>
+            </div>
+            {!noAgent && !blocked && !text.trim() && (
+              <div className="mt-3.5 flex flex-wrap justify-center gap-x-5 gap-y-0.5 max-sm:flex-col max-sm:items-center">
+                {STARTERS.map((s) => <button key={s} type="button" className="rounded-md px-1.5 py-1 text-[13px] text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setText(s); area.current?.focus(); }}>{s}</button>)}
+              </div>
+            )}
+          </form>
+        )}
+        <div className="mt-4 empty:hidden"><Err>{err}</Err></div>
+      </div>
     </div>
   );
-}
-
-export function Message({ m, seals, fresh }: { m: FlueConversationMessage; seals: Seal[]; fresh: Set<string> }) {
-  if (m.role === 'user') {
-    const t = m.parts.map((p) => (p.type === 'text' ? p.text : '')).join('');
-    return <div className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-base leading-6 whitespace-pre-wrap"><SealedText text={t} seals={seals} fresh={fresh} /></div>;
-  }
-  // Runs of tool calls and reasoning become one list of steps; text stays prose.
-  const blocks: (FlueConversationPart | FlueConversationPart[])[] = [];
-  for (const p of m.parts) {
-    if (p.type === 'text') blocks.push(p);
-    else if (p.type === 'reasoning' || p.type === 'dynamic-tool') { const last = blocks.at(-1); Array.isArray(last) ? last.push(p) : blocks.push([p]); }
-  }
-  return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
-      {blocks.map((b, i) => Array.isArray(b)
-        ? <Timeline key={i}>{b.map((p, j) => <Step key={j} p={p} />)}</Timeline>
-        : b.type === 'text' ? <div key={i} className="max-w-[68ch] text-base leading-6"><Markdown components={mdComponents}>{b.text}</Markdown></div> : null)}
-    </div>
-  );
-}
-
-function Step({ p }: { p: FlueConversationPart }) {
-  if (p.type === 'reasoning') return <ThinkingStep text={p.text} />;
-  if (p.type !== 'dynamic-tool') return null;
-  return <ToolStep name={p.toolName} input={(p.input ?? {}) as Record<string, any>} state={p.state} output={p.state === 'output-available' ? p.output : undefined} errorText={p.state === 'output-error' ? p.errorText : undefined} ms={'durationMs' in p && p.durationMs ? `${p.durationMs} ms` : ''} />;
 }
