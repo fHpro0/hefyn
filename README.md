@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <strong>One login for your team's agents, and workflows everyone can share.</strong>
+  <strong>Share workflows and one subscription per CLI with your whole team.</strong>
 </p>
 
 <p align="center">
@@ -32,19 +32,23 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/hero-dark.gif">
-    <img src="docs/readme/hero-light.gif" alt="Four people sign in through one login. Lena builds a private workflow, shares it with the team, and Tobias and Sofia use it on the same Claude Code team account, each in their own private session." width="100%">
+    <img src="docs/readme/hero-light.gif" alt="Anna shares one Claude Code subscription with the team. Lena builds a private workflow and shares it, and Tobias and Sofia use it on the same subscription, each in their own private session." width="100%">
   </picture>
 </p>
 
 ## What hefyn is
 
-hefyn gives a whole team one login to standard CLI agents (Claude Code, Codex, OpenCode, Pi) in the browser. An admin sets up one team account per CLI and connects the tools once; nobody needs their own API key, a separate account or a model choice. Sessions stay private to each account: sharing a team account or a workflow never shares anyone's chats, and admins cannot open them in the app.
+hefyn lets a whole team share workflows and one subscription per CLI (Claude Code, Codex, OpenCode, Pi), behind one login in the browser. An admin connects each subscription once and the team uses it; nobody needs their own account, API key or model choice. Sessions stay private to each account: sharing a subscription or a workflow never shares anyone's chats, and admins cannot open them in the app.
 
 People work with workflows, not models. A workflow (an Assistant with its instructions and skills) starts private, and whoever built it can share it with the team when it is ready. Each person works in a chat view or the agent's own terminal, and every conversation runs in its own Docker sandbox. hefyn runs no agent of its own: it starts the vendor's CLI and shows what it does.
 
 Model keys never enter the sandbox. The agent inside talks to a local bridge, which forwards over a unix socket to a
 gateway in hefyn's agent service, and the gateway adds the real key. The agent service (and with it the model traffic of
 sandboxes) reaches the internet only through an egress proxy that allows connected providers and MCP hosts. A sandbox has no route out unless an admin turns that on.
+
+> [!NOTE]
+> Claude Code and Codex are marked as not shareable in hefyn, because Anthropic's and OpenAI's terms tie those
+> subscriptions to one person. An admin can share them anyway after an explicit warning. Check the terms of your plan.
 
 ## What works today
 
@@ -54,7 +58,7 @@ sandboxes) reaches the internet only through an egress proxy that allows connect
 | **Assistants** Presets of an agent: name, agent, instructions, skills. | **Skills** Stored per user or shared with the team after review. |
 | **Files and WebDAV** A per-user file area, also mountable over WebDAV with an app password. | **MCP servers** Added privately or shared with the team. |
 | **Roles and permissions** Admin and Worker built in, custom roles with fine-grained permissions. | **Users** Add people and set their roles. |
-| **Usage and cost** Per person and model. | **Agent accounts** Sign in to Claude Code with your own Claude account instead of a shared key. |
+| **Usage and cost** Per person and model. | **Shared subscriptions** One subscription per CLI for the whole team, or your own account. |
 | **Devices** Pair a laptop to your account (stage 1; nothing runs there yet). | **Sign-in security** Two-factor and passkeys. |
 | **Branding and appearance** Light and dark, workspace logo. | **Command palette** Keyboard-first navigation. |
 
